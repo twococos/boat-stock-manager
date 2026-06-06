@@ -4,9 +4,11 @@ import type { ItemObject } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/common';
+import { Package } from '@/components/ui/icons';
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { ObjectForm } from '@/features/objects/ObjectForm';
 import { useObjects, useInventoryMap } from '@/hooks/useData';
-import { commitObjectUpsert } from '@/db/commands';
+import { commitObjectUpsert, commitObjectDelete } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { formatQuantity } from '@/lib/format';
 
@@ -32,6 +34,12 @@ export function ObjectsList() {
     setCreating(false);
   }
 
+  async function remove(id: string) {
+    if (!userName) return;
+    await commitObjectDelete(userName, id);
+    setEditing(null);
+  }
+
   return (
     <div className="flex flex-col gap-3 pt-2">
       <div className="flex items-center justify-between">
@@ -53,7 +61,7 @@ export function ObjectsList() {
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon="📦" text="Cap objecte. Crea'n un amb el botó de sota." />
+        <EmptyState icon={Package} text="Cap objecte. Crea'n un amb el botó de sota." />
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((o) => (
@@ -63,7 +71,9 @@ export function ObjectsList() {
                 className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-2xl">{o.icon ?? '📦'}</span>
+                  <span className="flex h-8 w-8 items-center justify-center text-2xl">
+                    {o.icon ?? <Package size={22} className="text-boat-500" />}
+                  </span>
                   <span className="text-left">
                     <span className="block font-semibold">{o.name}</span>
                     <span className="block text-xs text-boat-500">
@@ -87,7 +97,13 @@ export function ObjectsList() {
       </Sheet>
       <Sheet open={!!editing} onClose={() => setEditing(null)} title="Editar objecte">
         {editing && (
-          <ObjectForm initial={editing} onSave={save} onCancel={() => setEditing(null)} />
+          <div className="flex flex-col gap-4">
+            <ObjectForm initial={editing} onSave={save} onCancel={() => setEditing(null)} />
+            <ConfirmDelete
+              message={`Eliminar "${editing.name}"? Es traurà també de les receptes on figuri com a ingredient.`}
+              onConfirm={() => remove(editing.id)}
+            />
+          </div>
         )}
       </Sheet>
     </div>

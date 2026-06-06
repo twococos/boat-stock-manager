@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginScreen } from './auth/LoginScreen';
 import { SyncProvider } from './sync/SyncProvider';
-import { seedIfEmpty } from './db/seed';
 import { Layout } from './routes/Layout';
 import { Home } from './routes/Home';
 import { CookMenu } from './routes/CookMenu';
@@ -40,11 +38,7 @@ const router = createHashRouter([
 ]);
 
 function Gate() {
-  const { authenticated, loading, userName } = useAuth();
-
-  useEffect(() => {
-    if (userName) void seedIfEmpty(userName);
-  }, [userName]);
+  const { authenticated, loading } = useAuth();
 
   if (loading) {
     return (

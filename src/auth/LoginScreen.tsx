@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from './AuthProvider';
 import { isSupabaseConfigured } from '@/sync/supabase';
 import { Button } from '@/components/ui/Button';
+import { Sailboat } from '@/components/ui/icons';
 
 /**
  * Pantalla de login: nom lliure + contrasenya del vaixell.
@@ -29,7 +30,7 @@ export function LoginScreen() {
 
   return (
     <div className="min-h-full bg-boat-50 text-boat-900 flex flex-col items-center justify-center gap-6 p-6">
-      <div className="text-6xl">⛵</div>
+      <Sailboat size={64} className="text-boat-700" />
       <h1 className="text-2xl font-bold">Boat Stock Manager</h1>
 
       <form onSubmit={onSubmit} className="w-full max-w-xs flex flex-col gap-4">

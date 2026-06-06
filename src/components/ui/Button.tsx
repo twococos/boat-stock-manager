@@ -10,7 +10,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variants: Record<Variant, string> = {
   primary: 'bg-boat-700 text-white',
   secondary: 'bg-boat-100 text-boat-900',
-  danger: 'bg-red-600 text-white',
+  // L'accent és granate; el perill es diferencia amb un vermell viu contornejat
+  // sobre blanc perquè no es confongui amb els botons primaris.
+  danger: 'border-2 border-red-500 bg-white text-red-600',
   ghost: 'bg-transparent text-boat-700',
 };
 

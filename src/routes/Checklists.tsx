@@ -4,9 +4,11 @@ import type { ChecklistTemplate } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/common';
+import { CheckSquare, Square, Pencil } from '@/components/ui/icons';
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { useChecklists } from '@/hooks/useData';
 import { db } from '@/db/db';
-import { commitChecklistUpsert } from '@/db/commands';
+import { commitChecklistUpsert, commitChecklistDelete } from '@/db/commands';
 import { toggleItem, resetProgress } from '@/db/repositories/checklistProgress.repo';
 import { useAuth } from '@/auth/AuthProvider';
 import { newId } from '@/lib/id';
@@ -19,6 +21,7 @@ import { nowISO } from '@/lib/time';
 export function Checklists() {
   const checklists = useChecklists() ?? [];
   const [open, setOpen] = useState<ChecklistTemplate | null>(null);
+  const [editing, setEditing] = useState<ChecklistTemplate | null>(null);
   const [creating, setCreating] = useState(false);
 
   return (
@@ -26,17 +29,27 @@ export function Checklists() {
       <h1 className="text-xl font-bold">Checklists</h1>
 
       {checklists.length === 0 ? (
-        <EmptyState icon="✅" text="Cap checklist. Crea procediments rutinaris." />
+        <EmptyState icon={CheckSquare} text="Cap checklist. Crea procediments rutinaris." />
       ) : (
         <ul className="flex flex-col gap-2">
           {checklists.map((c) => (
-            <li key={c.id}>
+            <li
+              key={c.id}
+              className="flex items-center justify-between rounded-2xl bg-white p-3 shadow-sm"
+            >
               <button
                 onClick={() => setOpen(c)}
-                className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
+                className="flex flex-1 items-center justify-between active:scale-[0.98]"
               >
                 <span className="font-semibold">{c.title}</span>
                 <span className="text-xs text-boat-500">{c.items.length} passos</span>
+              </button>
+              <button
+                onClick={() => setEditing(c)}
+                aria-label="Editar plantilla"
+                className="ml-3 text-boat-600"
+              >
+                <Pencil size={18} />
               </button>
             </li>
           ))}
@@ -48,6 +61,15 @@ export function Checklists() {
       {open && <RunSheet template={open} onClose={() => setOpen(null)} />}
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nova checklist">
         <ChecklistEditor onDone={() => setCreating(false)} />
+      </Sheet>
+      <Sheet
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Editar checklist"
+      >
+        {editing && (
+          <ChecklistEditor initial={editing} onDone={() => setEditing(null)} />
+        )}
       </Sheet>
     </div>
   );
@@ -80,7 +102,11 @@ function RunSheet({
                   done ? 'bg-green-50 text-boat-400 line-through' : 'bg-boat-50'
                 }`}
               >
-                <span className="text-xl">{done ? '☑️' : '⬜'}</span>
+                {done ? (
+                  <CheckSquare size={22} className="shrink-0 text-green-600" />
+                ) : (
+                  <Square size={22} className="shrink-0 text-boat-400" />
+                )}
                 <span>{it.label}</span>
               </button>
             </li>
@@ -128,6 +154,12 @@ function ChecklistEditor({
     onDone();
   }
 
+  async function remove() {
+    if (!initial || !userName) return;
+    await commitChecklistDelete(userName, initial.id);
+    onDone();
+  }
+
   const field = 'rounded-xl border border-boat-100 px-4 py-3 w-full';
   return (
     <div className="flex flex-col gap-3">
@@ -141,6 +173,12 @@ function ChecklistEditor({
         placeholder={'Aixecar àncora\nRecollir defenses\nEngegar motor'}
       />
       <Button onClick={() => void save()}>Desar plantilla</Button>
+      {initial && (
+        <ConfirmDelete
+          message={`Eliminar la checklist "${initial.title}"?`}
+          onConfirm={remove}
+        />
+      )}
     </div>
   );
 }

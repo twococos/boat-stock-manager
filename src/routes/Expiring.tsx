@@ -1,5 +1,6 @@
 import { useExpiring } from '@/hooks/useDerived';
 import { EmptyState, Card } from '@/components/ui/common';
+import { Salad, Utensils } from '@/components/ui/icons';
 import { formatQuantity } from '@/lib/format';
 
 /** Llista d'objectes que caduquen aviat (per lots). PLA.md secció 8.3 / 12.1. */
@@ -10,14 +11,16 @@ export function Expiring() {
     <div className="flex flex-col gap-3 pt-2">
       <h1 className="text-xl font-bold">Caduca aviat</h1>
       {expiring.length === 0 ? (
-        <EmptyState icon="🥗" text="Res caduca en els pròxims 30 dies." />
+        <EmptyState icon={Salad} text="Res caduca en els pròxims 30 dies." />
       ) : (
         <ul className="flex flex-col gap-2">
           {expiring.map((e) => (
             <li key={e.object.id}>
               <Card className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <span className="text-2xl">{e.object.icon ?? '🍽️'}</span>
+                  <span className="flex h-8 w-8 items-center justify-center text-2xl">
+                    {e.object.icon ?? <Utensils size={22} className="text-boat-500" />}
+                  </span>
                   <span>
                     <span className="block font-semibold">{e.object.name}</span>
                     <span className="block text-xs text-boat-500">

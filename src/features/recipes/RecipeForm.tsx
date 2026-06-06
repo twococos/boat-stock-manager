@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Recipe, RecipeIngredient } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
+import { X, Flame } from '@/components/ui/icons';
 import { useObjects } from '@/hooks/useData';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
@@ -98,9 +99,10 @@ export function RecipeForm({
           <button
             type="button"
             onClick={() => setIngredients((p) => p.filter((_, i) => i !== idx))}
+            aria-label="Treure ingredient"
             className="text-red-500"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
       ))}
@@ -118,7 +120,9 @@ export function RecipeForm({
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={needsCooking} onChange={(e) => setNeedsCooking(e.target.checked)} />
-        Cal foc 🔥
+        <span className="flex items-center gap-1">
+          Cal foc <Flame size={16} className="text-red-500" />
+        </span>
       </label>
 
       <label className="text-sm font-medium text-boat-700">Passos (un per línia, opcional)</label>

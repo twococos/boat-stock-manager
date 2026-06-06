@@ -21,7 +21,11 @@ export type EventType =
   | 'object_upsert'
   | 'location_upsert'
   | 'recipe_upsert'
-  | 'checklist_upsert';
+  | 'checklist_upsert'
+  | 'object_delete'
+  | 'location_delete'
+  | 'recipe_delete'
+  | 'checklist_delete';
 
 /** Sobre comú a TOTS els esdeveniments (fila append-only del log). */
 export interface EventBase {
@@ -72,10 +76,35 @@ export interface ChecklistUpsertEvent extends EventBase {
   payload: ChecklistTemplate;
 }
 
+// ── deletes de definició (tombstone; porten només l'id objectiu) ─────────────
+export interface ObjectDeleteEvent extends EventBase {
+  type: 'object_delete';
+  targetId: ID;
+}
+
+export interface LocationDeleteEvent extends EventBase {
+  type: 'location_delete';
+  targetId: ID;
+}
+
+export interface RecipeDeleteEvent extends EventBase {
+  type: 'recipe_delete';
+  targetId: ID;
+}
+
+export interface ChecklistDeleteEvent extends EventBase {
+  type: 'checklist_delete';
+  targetId: ID;
+}
+
 // ── unió discriminada ────────────────────────────────────────────────────────
 export type AppEvent =
   | StockDeltaEvent
   | ObjectUpsertEvent
   | LocationUpsertEvent
   | RecipeUpsertEvent
-  | ChecklistUpsertEvent;
+  | ChecklistUpsertEvent
+  | ObjectDeleteEvent
+  | LocationDeleteEvent
+  | RecipeDeleteEvent
+  | ChecklistDeleteEvent;

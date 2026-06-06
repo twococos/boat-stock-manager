@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react';
+import { Inbox, type LucideIcon } from './icons';
 
 /** Estat buit reutilitzable per a llistes sense elements. */
-export function EmptyState({ icon = '📭', text }: { icon?: string; text: string }) {
+export function EmptyState({
+  icon: Icon = Inbox,
+  text,
+}: {
+  icon?: LucideIcon;
+  text: string;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 py-12 text-center text-boat-500">
-      <div className="text-4xl">{icon}</div>
+      <Icon size={48} strokeWidth={1.5} className="text-boat-400" />
       <p>{text}</p>
     </div>
   );
@@ -48,12 +55,12 @@ export function NumberStepper({
 
 /** Targeta clicable amb icona + text per a graelles d'opcions. */
 export function TileButton({
-  icon,
+  icon: Icon,
   label,
   onClick,
   className = '',
 }: {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   onClick: () => void;
   className?: string;
@@ -63,7 +70,7 @@ export function TileButton({
       onClick={onClick}
       className={`flex min-h-touch flex-col items-center justify-center gap-1 rounded-2xl p-4 shadow-sm active:scale-95 ${className}`}
     >
-      <span className="text-3xl">{icon}</span>
+      <Icon size={28} />
       <span className="text-sm font-semibold">{label}</span>
     </button>
   );

@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { ItemObject } from '@/types/entities';
+import type { ItemObject, StowageLocation } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
+import { Archive, Package, Pencil } from '@/components/ui/icons';
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
+import { LocationForm } from '@/features/locations/LocationForm';
 import { useObjects, useLocations, useInventoryMap } from '@/hooks/useData';
 import { formatQuantity } from '@/lib/format';
-import { commitStockDelta } from '@/db/commands';
+import {
+  commitStockDelta,
+  commitLocationUpsert,
+  commitLocationDelete,
+} from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 
 /**
@@ -25,6 +32,7 @@ export function LocationView() {
   const location = locations.find((l) => l.id === id);
   const [adjusting, setAdjusting] = useState<ItemObject | null>(null);
   const [newQty, setNewQty] = useState(0);
+  const [editing, setEditing] = useState(false);
 
   const here = useMemo(
     () => objects.filter((o) => o.usualLocationIds.includes(id ?? '')),
@@ -43,6 +51,18 @@ export function LocationView() {
     setAdjusting(null);
   }
 
+  async function saveLocation(l: StowageLocation) {
+    if (!userName) return;
+    await commitLocationUpsert(userName, l);
+    setEditing(false);
+  }
+
+  async function removeLocation() {
+    if (!location || !userName) return;
+    await commitLocationDelete(userName, location.id);
+    navigate('/locations');
+  }
+
   if (!location) {
     return <EmptyState text="Lloc no trobat." />;
   }
@@ -52,7 +72,19 @@ export function LocationView() {
       <button onClick={() => navigate('/locations')} className="self-start text-sm text-boat-600">
         ← Llocs
       </button>
-      <h1 className="text-xl font-bold">🗄️ {location.name}</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+          <Archive size={22} className="text-boat-700" />
+          {location.name}
+        </h1>
+        <button
+          onClick={() => setEditing(true)}
+          className="flex items-center gap-1 text-sm text-boat-600"
+        >
+          <Pencil size={16} />
+          Editar
+        </button>
+      </div>
       {location.description && (
         <p className="text-sm text-boat-500">{location.description}</p>
       )}
@@ -73,7 +105,9 @@ export function LocationView() {
                   className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-2xl">{o.icon ?? '📦'}</span>
+                    <span className="flex h-8 w-8 items-center justify-center text-2xl">
+                      {o.icon ?? <Package size={22} className="text-boat-500" />}
+                    </span>
                     <span className="font-semibold">{o.name}</span>
                   </span>
                   <span className="text-sm text-boat-500">
@@ -103,6 +137,20 @@ export function LocationView() {
             <Button onClick={() => void confirmAdjust()}>Desar ajust</Button>
           </div>
         )}
+      </Sheet>
+
+      <Sheet open={editing} onClose={() => setEditing(false)} title="Editar lloc">
+        <div className="flex flex-col gap-4">
+          <LocationForm
+            initial={location}
+            onSave={saveLocation}
+            onCancel={() => setEditing(false)}
+          />
+          <ConfirmDelete
+            message={`Eliminar "${location.name}"? Desapareixerà dels objectes que el tenien com a ubicació habitual.`}
+            onConfirm={removeLocation}
+          />
+        </div>
       </Sheet>
     </div>
   );

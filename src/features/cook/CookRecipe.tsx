@@ -3,6 +3,7 @@ import type { Recipe } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
+import { Flame, AlertTriangle, Package, BookOpen } from '@/components/ui/icons';
 import { useObjectsMap, useInventoryMap, useRecipes } from '@/hooks/useData';
 import { scaleRecipe } from '@/domain/recipes/scaling';
 import { recipeToCookLines } from '@/domain/recipes/scaling';
@@ -51,7 +52,7 @@ export function CookRecipe({ onDone }: { onDone: () => void }) {
   }
 
   if ((recipes ?? []).length === 0) {
-    return <EmptyState icon="📖" text="Encara no hi ha receptes. Crea'n una a Objectes → Receptes." />;
+    return <EmptyState icon={BookOpen} text="Encara no hi ha receptes. Crea'n una a Objectes → Receptes." />;
   }
 
   return (
@@ -67,8 +68,9 @@ export function CookRecipe({ onDone }: { onDone: () => void }) {
               className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
             >
               <span className="font-semibold">{r.title}</span>
-              <span className="text-xs text-boat-500">
-                {r.needsCooking ? '🔥' : ''} {r.ingredients.length} ingr.
+              <span className="flex items-center gap-1 text-xs text-boat-500">
+                {r.needsCooking && <Flame size={14} className="text-red-500" />}
+                {r.ingredients.length} ingr.
               </span>
             </button>
           </li>
@@ -100,7 +102,9 @@ export function CookRecipe({ onDone }: { onDone: () => void }) {
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <span>{obj?.icon ?? '•'}</span>
+                      <span className="flex h-5 w-5 items-center justify-center">
+                        {obj?.icon ?? <Package size={16} className="text-boat-400" />}
+                      </span>
                       <span>{obj?.name ?? s.objectId}</span>
                     </span>
                     <span
@@ -119,8 +123,9 @@ export function CookRecipe({ onDone }: { onDone: () => void }) {
             </ul>
 
             {anyShort && (
-              <p className="text-sm text-red-600">
-                ⚠️ Falta estoc d'alguns ingredients (en vermell).
+              <p className="flex items-center gap-1.5 text-sm text-red-600">
+                <AlertTriangle size={16} className="shrink-0" />
+                Falta estoc d'alguns ingredients (en vermell).
               </p>
             )}
 

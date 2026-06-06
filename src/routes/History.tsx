@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import { useAllEvents, useObjectsMap, useRecipes } from '@/hooks/useData';
 import { EmptyState, Card } from '@/components/ui/common';
+import { ScrollText, reasonIcon } from '@/components/ui/icons';
 import { sortEvents } from '@/domain/inventory/ordering';
 import { stripLocalMeta } from '@/db/repositories/events.repo';
 import { relativeFromNow } from '@/lib/time';
 import { formatQuantity } from '@/lib/format';
-import type { AppEvent, StockDeltaEvent } from '@/types/events';
+import type { AppEvent, StockDeltaEvent, StockDeltaReason } from '@/types/events';
 
-const REASON_LABEL: Record<string, string> = {
-  cooking: '🍳 Cuinat',
-  purchase: '🛒 Compra',
-  adjustment: '🔧 Ajust',
+const REASON_LABEL: Record<StockDeltaReason, string> = {
+  cooking: 'Cuinat',
+  purchase: 'Compra',
+  adjustment: 'Ajust',
 };
 
 /** Historial de moviments d'estoc (de franc gràcies a l'event log). PLA.md secció 12.7. */
@@ -30,18 +31,23 @@ export function History() {
     id ? recipes.find((r) => r.id === id)?.title : undefined;
 
   if (stockEvents.length === 0) {
-    return <EmptyState icon="📜" text="Cap moviment encara." />;
+    return <EmptyState icon={ScrollText} text="Cap moviment encara." />;
   }
 
   return (
     <div className="flex flex-col gap-3 pt-2">
       <h1 className="text-xl font-bold">Historial</h1>
       <ul className="flex flex-col gap-2">
-        {stockEvents.map((e) => (
+        {stockEvents.map((e) => {
+          const ReasonIcon = reasonIcon(e.reason);
+          return (
           <li key={e.id}>
             <Card>
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold">{REASON_LABEL[e.reason] ?? e.reason}</span>
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <ReasonIcon size={16} className="text-boat-700" />
+                  {REASON_LABEL[e.reason] ?? e.reason}
+                </span>
                 <span className="text-boat-400">{relativeFromNow(e.occurredAt)}</span>
               </div>
               <div className="mt-1 text-xs text-boat-500">
@@ -65,7 +71,8 @@ export function History() {
               </ul>
             </Card>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );

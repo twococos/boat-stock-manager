@@ -4,6 +4,7 @@ import type { ItemObject, Recipe } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState, TileButton } from '@/components/ui/common';
+import { Package, BookOpen } from '@/components/ui/icons';
 import { useObjects, useRecipes, useObjectsMap } from '@/hooks/useData';
 import { recipeToPurchaseLines } from '@/domain/recipes/scaling';
 import { commitStockDelta } from '@/db/commands';
@@ -82,8 +83,8 @@ export function PurchaseFlow() {
           )}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <TileButton icon="📦" label="Ingredient" onClick={() => setMode('object')} className="bg-boat-500 text-white" />
-          <TileButton icon="📖" label="Recepta" onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
+          <TileButton icon={Package} label="Ingredient" onClick={() => setMode('object')} className="bg-boat-500 text-white" />
+          <TileButton icon={BookOpen} label="Recepta" onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
         </div>
         <Button variant="secondary" onClick={() => navigate('/')}>
           Acabar compra
@@ -121,7 +122,9 @@ export function PurchaseFlow() {
                     }}
                     className="flex w-full items-center gap-2 rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
                   >
-                    <span className="text-2xl">{o.icon ?? '📦'}</span>
+                    <span className="flex h-8 w-8 items-center justify-center text-2xl">
+                      {o.icon ?? <Package size={22} className="text-boat-500" />}
+                    </span>
                     <span className="font-semibold">{o.name}</span>
                   </button>
                 </li>
@@ -133,7 +136,7 @@ export function PurchaseFlow() {
         <>
           <h1 className="text-xl font-bold">Afegir recepta</h1>
           {recipes.length === 0 ? (
-            <EmptyState icon="📖" text="Cap recepta." />
+            <EmptyState icon={BookOpen} text="Cap recepta." />
           ) : (
             <ul className="flex flex-col gap-2">
               {recipes.map((r) => (

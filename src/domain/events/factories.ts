@@ -13,6 +13,10 @@ import type {
   LocationUpsertEvent,
   RecipeUpsertEvent,
   ChecklistUpsertEvent,
+  ObjectDeleteEvent,
+  LocationDeleteEvent,
+  RecipeDeleteEvent,
+  ChecklistDeleteEvent,
 } from '@/types/events';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
@@ -88,4 +92,33 @@ export function makeChecklistUpsertEvent(
   payload: ChecklistTemplate,
 ): ChecklistUpsertEvent {
   return { ...base(ctx), type: 'checklist_upsert', payload };
+}
+
+// ── deletes de definició (tombstone) ─────────────────────────────────────────
+export function makeObjectDeleteEvent(
+  ctx: EventContext,
+  targetId: ID,
+): ObjectDeleteEvent {
+  return { ...base(ctx), type: 'object_delete', targetId };
+}
+
+export function makeLocationDeleteEvent(
+  ctx: EventContext,
+  targetId: ID,
+): LocationDeleteEvent {
+  return { ...base(ctx), type: 'location_delete', targetId };
+}
+
+export function makeRecipeDeleteEvent(
+  ctx: EventContext,
+  targetId: ID,
+): RecipeDeleteEvent {
+  return { ...base(ctx), type: 'recipe_delete', targetId };
+}
+
+export function makeChecklistDeleteEvent(
+  ctx: EventContext,
+  targetId: ID,
+): ChecklistDeleteEvent {
+  return { ...base(ctx), type: 'checklist_delete', targetId };
 }

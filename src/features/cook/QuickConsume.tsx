@@ -3,6 +3,7 @@ import type { ItemObject } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
+import { Package } from '@/components/ui/icons';
 import { useInventoryMap } from '@/hooks/useData';
 import { formatQuantity } from '@/lib/format';
 import { commitStockDelta } from '@/db/commands';
@@ -56,7 +57,9 @@ export function QuickConsume({
                 className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2">
-                  <span className="text-2xl">{o.icon ?? '📦'}</span>
+                  <span className="flex h-8 w-8 items-center justify-center text-2xl">
+                    {o.icon ?? <Package size={22} className="text-boat-500" />}
+                  </span>
                   <span className="font-semibold">{o.name}</span>
                 </span>
                 <span

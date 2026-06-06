@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ItemObject } from '@/types/entities';
 import { TileButton } from '@/components/ui/common';
+import { cookModeIcon } from '@/components/ui/icons';
 import { CookRecipe } from '@/features/cook/CookRecipe';
 import { QuickConsume } from '@/features/cook/QuickConsume';
 import { useObjects } from '@/hooks/useData';
@@ -23,12 +24,12 @@ export function CookMenu() {
       <div className="flex flex-col gap-4 pt-2">
         <h1 className="text-xl font-bold">Què cuinem?</h1>
         <div className="grid grid-cols-2 gap-3">
-          <TileButton icon="📖" label="Recepta" onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
-          <TileButton icon="💧" label="Aigua" onClick={() => setMode('water')} className="bg-white text-boat-900" />
-          <TileButton icon="🥨" label="Picar" onClick={() => setMode('snacks')} className="bg-white text-boat-900" />
-          <TileButton icon="🍰" label="Postre" onClick={() => setMode('dessert')} className="bg-white text-boat-900" />
-          <TileButton icon="🥐" label="Esmorzar" onClick={() => setMode('breakfast')} className="bg-white text-boat-900" />
-          <TileButton icon="🔎" label="Tot" onClick={() => setMode('all')} className="bg-boat-100 text-boat-900" />
+          <TileButton icon={cookModeIcon('recipe')} label="Recepta" onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
+          <TileButton icon={cookModeIcon('water')} label="Aigua" onClick={() => setMode('water')} className="bg-white text-boat-900" />
+          <TileButton icon={cookModeIcon('snacks')} label="Picar" onClick={() => setMode('snacks')} className="bg-white text-boat-900" />
+          <TileButton icon={cookModeIcon('dessert')} label="Postre" onClick={() => setMode('dessert')} className="bg-white text-boat-900" />
+          <TileButton icon={cookModeIcon('breakfast')} label="Esmorzar" onClick={() => setMode('breakfast')} className="bg-white text-boat-900" />
+          <TileButton icon={cookModeIcon('all')} label="Tot" onClick={() => setMode('all')} className="bg-boat-100 text-boat-900" />
         </div>
       </div>
     );

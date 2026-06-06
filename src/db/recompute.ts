@@ -23,6 +23,13 @@ export async function recomputeAll(): Promise<void> {
   // 2) Derivar inventari amb les definicions d'objecte (per a la política de lots).
   const inventory = deriveInventory(events, defs.objects);
 
+  // 3) Descartar l'inventari d'objectes ja eliminats: els seus stock_delta romanen al
+  //    log però l'objecte ja no existeix com a definició, així que no ha de figurar a
+  //    l'inventari derivat.
+  for (const objectId of inventory.keys()) {
+    if (!defs.objects.has(objectId)) inventory.delete(objectId);
+  }
+
   await db.transaction(
     'rw',
     [db.objects, db.locations, db.recipes, db.checklistTemplates, db.inventory],

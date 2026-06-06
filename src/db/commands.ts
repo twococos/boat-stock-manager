@@ -12,6 +12,10 @@ import {
   makeLocationUpsertEvent,
   makeRecipeUpsertEvent,
   makeChecklistUpsertEvent,
+  makeObjectDeleteEvent,
+  makeLocationDeleteEvent,
+  makeRecipeDeleteEvent,
+  makeChecklistDeleteEvent,
   type EventContext,
 } from '@/domain/events/factories';
 import { addLocalEvent } from './repositories/events.repo';
@@ -82,4 +86,39 @@ export async function commitChecklistUpsert(
 ): Promise<void> {
   const ctx = await buildContext(userName);
   await commit(makeChecklistUpsertEvent(ctx, payload));
+}
+
+// ── deletes de definició ─────────────────────────────────────────────────────
+// L'eliminació en cascada (treure l'objecte de les receptes, el lloc dels objectes)
+// la resol la derivació a deriveDefinitions; aquí només s'emet el tombstone.
+export async function commitObjectDelete(
+  userName: string,
+  id: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeObjectDeleteEvent(ctx, id));
+}
+
+export async function commitLocationDelete(
+  userName: string,
+  id: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeLocationDeleteEvent(ctx, id));
+}
+
+export async function commitRecipeDelete(
+  userName: string,
+  id: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeRecipeDeleteEvent(ctx, id));
+}
+
+export async function commitChecklistDelete(
+  userName: string,
+  id: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeChecklistDeleteEvent(ctx, id));
 }

@@ -5,13 +5,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta marina
+        // Paleta granate (color del veler). Es mantenen els noms de to perquè totes
+        // les classes boat-* existents heretin l'accent sense tocar-les.
         boat: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9',
-          700: '#0369a1',
-          900: '#0c4a6e',
+          50: '#fdf2f4', // fons molt clar rosat
+          100: '#f9dde2', // secundari clar
+          500: '#a8324a', // accent mitjà granate
+          700: '#7a1f33', // accent fosc (botons primaris)
+          900: '#4a1320', // text fosc granate
         },
       },
       // Mides de toc grans per a ús amb mans molles / al sol

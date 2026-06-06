@@ -4,6 +4,7 @@ import type { StowageLocation } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/common';
+import { Archive } from '@/components/ui/icons';
 import { LocationForm } from '@/features/locations/LocationForm';
 import { useLocations } from '@/hooks/useData';
 import { commitLocationUpsert } from '@/db/commands';
@@ -27,16 +28,16 @@ export function LocationsList() {
       <h1 className="text-xl font-bold">Llocs d'estiva</h1>
 
       {locations.length === 0 ? (
-        <EmptyState icon="🗄️" text="Cap lloc definit encara." />
+        <EmptyState icon={Archive} text="Cap lloc definit encara." />
       ) : (
         <ul className="grid grid-cols-2 gap-2">
           {locations.map((l) => (
             <li key={l.id}>
               <button
                 onClick={() => navigate(`/locations/${l.id}`)}
-                className="flex min-h-touch w-full flex-col items-start justify-center rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
+                className="flex min-h-touch w-full flex-col items-start justify-center gap-1 rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
               >
-                <span className="text-2xl">🗄️</span>
+                <Archive size={26} className="text-boat-700" />
                 <span className="font-semibold">{l.name}</span>
               </button>
             </li>

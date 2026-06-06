@@ -1,0 +1,72 @@
+import { useMemo } from 'react';
+import { useAllEvents, useObjectsMap, useRecipes } from '@/hooks/useData';
+import { EmptyState, Card } from '@/components/ui/common';
+import { sortEvents } from '@/domain/inventory/ordering';
+import { stripLocalMeta } from '@/db/repositories/events.repo';
+import { relativeFromNow } from '@/lib/time';
+import { formatQuantity } from '@/lib/format';
+import type { AppEvent, StockDeltaEvent } from '@/types/events';
+
+const REASON_LABEL: Record<string, string> = {
+  cooking: '🍳 Cuinat',
+  purchase: '🛒 Compra',
+  adjustment: '🔧 Ajust',
+};
+
+/** Historial de moviments d'estoc (de franc gràcies a l'event log). PLA.md secció 12.7. */
+export function History() {
+  const rawEvents = useAllEvents();
+  const objectsMap = useObjectsMap();
+  const recipes = useRecipes() ?? [];
+
+  const stockEvents = useMemo(() => {
+    const events: AppEvent[] = (rawEvents ?? []).map((r) => stripLocalMeta(r as never));
+    return sortEvents(events)
+      .reverse()
+      .filter((e): e is StockDeltaEvent => e.type === 'stock_delta');
+  }, [rawEvents]);
+
+  const recipeTitle = (id?: string) =>
+    id ? recipes.find((r) => r.id === id)?.title : undefined;
+
+  if (stockEvents.length === 0) {
+    return <EmptyState icon="📜" text="Cap moviment encara." />;
+  }
+
+  return (
+    <div className="flex flex-col gap-3 pt-2">
+      <h1 className="text-xl font-bold">Historial</h1>
+      <ul className="flex flex-col gap-2">
+        {stockEvents.map((e) => (
+          <li key={e.id}>
+            <Card>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">{REASON_LABEL[e.reason] ?? e.reason}</span>
+                <span className="text-boat-400">{relativeFromNow(e.occurredAt)}</span>
+              </div>
+              <div className="mt-1 text-xs text-boat-500">
+                {e.userName}
+                {e.diners ? ` · ${e.diners} pers.` : ''}
+                {recipeTitle(e.recipeId) ? ` · ${recipeTitle(e.recipeId)}` : ''}
+              </div>
+              <ul className="mt-2 flex flex-col gap-0.5 text-sm">
+                {e.lines.map((l, i) => {
+                  const obj = objectsMap.get(l.objectId);
+                  return (
+                    <li key={i} className="flex justify-between">
+                      <span>{obj?.name ?? l.objectId}</span>
+                      <span className={l.delta < 0 ? 'text-red-600' : 'text-green-700'}>
+                        {l.delta > 0 ? '+' : ''}
+                        {formatQuantity(l.delta, obj?.quantityType ?? 'units')}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

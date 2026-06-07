@@ -52,6 +52,9 @@ export default defineConfig({
       workbox: {
         // Precache de l'app shell
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Els sets d'icones (Tabler ~2 MB) van en chunks lazy però es PRECACHEgen perquè
+        // el selector funcioni offline. Cal pujar el límit per defecte (2 MiB) de Workbox.
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         // NO cauar l'API de Supabase (les dades viuen a Dexie i les gestiona el sync).
         navigateFallbackDenylist: [/^\/auth/, /supabase\.co/],
         runtimeCaching: [

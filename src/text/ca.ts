@@ -326,9 +326,11 @@ export const ca = {
 
   /** Selector d'icona. */
   iconPicker: {
-    searchPlaceholder: 'Cerca una icona (poma, peix, cafè…)',
+    searchPlaceholder: 'Cerca una icona (poma, peix, clau…)',
     removeIconAria: 'Treure icona',
     noIcons: 'Cap icona trobada.',
+    loading: 'Carregant icones…',
+    refineSearch: 'Afina la cerca per veure’n més',
   },
 
   /** Llocs d'estiva. */

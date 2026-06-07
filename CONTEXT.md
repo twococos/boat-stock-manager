@@ -207,6 +207,17 @@ aplicades (0001..0007)**. La sincronització de punta a punta funciona; per conn
 fins aquí"; botó "Esborrar tot l'historial" al final. Confirmació en dos passos amb
 [src/components/ui/ConfirmAction.tsx](src/components/ui/ConfirmAction.tsx).
 
+**Icones d'objecte (Iconify offline):** el selector d'icones d'un objecte (`IconPicker`)
+mostra ~6.400 icones de línia (Tabler complet + un subconjunt curat de Game Icons), totes
+**offline** (cap API). `ItemObject.icon` desa una clau Iconify (`tabler:apple`,
+`game-icons:fish-cooked`). La càrrega és **lazy**: els JSON van en chunks separats que el
+selector demana en obrir-se (el bundle inicial no en paga res) i Workbox els precacheja.
+Lògica a [src/features/objects/iconSets.ts](src/features/objects/iconSets.ts) (càrrega,
+cerca català/anglès, `LEGACY_ICON_MAP` per a claus antigues); render a
+[src/components/ui/ObjectIcon.tsx](src/components/ui/ObjectIcon.tsx). El subconjunt de Game
+Icons es regenera amb `node scripts/build-game-icons-subset.mjs`. Les icones de la UI fixa
+(navegació, botons) segueixen sent lucide a [src/components/ui/icons.tsx](src/components/ui/icons.tsx).
+
 **El que NO està fet / pendent natural:**
 - Gasoil i aigua de tancs (diferit per acord).
 - Icones PWA reals (ara hi ha placeholders blaus a `public/icons/`).

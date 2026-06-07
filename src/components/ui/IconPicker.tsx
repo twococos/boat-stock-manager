@@ -1,13 +1,16 @@
-import { useState } from 'react';
-import { searchFoodIcons } from '@/features/objects/foodIcons';
+import { useEffect, useMemo, useState } from 'react';
+import { Icon } from '@iconify/react/offline';
+import { loadIconSets, searchIcons, ICON_SEARCH_LIMIT } from '@/features/objects/iconSets';
 import { Search, X } from './icons';
 import { t } from '@/text';
 
 /**
- * Selector d'icona de menjar amb barra de cerca.
+ * Selector d'icona (Iconify, offline).
  *
- * Mostra una graella d'icones lucide filtrables per paraules clau (català/anglès).
- * El valor desat (`value`) és la clau de la icona triada; `onChange('')` la treu.
+ * Mostra una graella d'icones filtrables per paraules clau (català/anglès) provinents de
+ * Tabler + un subconjunt de Game Icons. Els sets es carreguen lazy en muntar el selector.
+ * El valor desat (`value`) és la clau Iconify triada (p.ex. `tabler:apple`); `onChange('')`
+ * la treu. La cerca es capa a `ICON_SEARCH_LIMIT` resultats per no penjar el render.
  */
 export function IconPicker({
   value,
@@ -17,7 +20,18 @@ export function IconPicker({
   onChange: (key: string) => void;
 }) {
   const [query, setQuery] = useState('');
-  const results = searchFoodIcons(query);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    loadIconSets().then(() => alive && setReady(true));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const results = useMemo(() => (ready ? searchIcons(query) : []), [ready, query]);
+  const capped = results.length >= ICON_SEARCH_LIMIT;
 
   return (
     <div className="flex flex-col gap-2">
@@ -45,25 +59,35 @@ export function IconPicker({
       </div>
 
       <div className="grid max-h-48 grid-cols-6 gap-1 overflow-y-auto rounded-xl bg-boat-50 p-2">
-        {results.map((entry) => {
-          const Icon = entry.Icon;
-          const active = entry.key === value;
-          return (
-            <button
-              key={entry.key}
-              type="button"
-              onClick={() => onChange(entry.key)}
-              className={`flex aspect-square items-center justify-center rounded-xl active:scale-90 ${
-                active ? 'bg-boat-700 text-white' : 'bg-white text-boat-700'
-              }`}
-            >
-              <Icon size={24} />
-            </button>
-          );
-        })}
-        {results.length === 0 && (
+        {!ready && (
+          <p className="col-span-6 py-4 text-center text-sm text-boat-400">
+            {t.iconPicker.loading}
+          </p>
+        )}
+        {ready &&
+          results.map((key) => {
+            const active = key === value;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onChange(key)}
+                className={`flex aspect-square items-center justify-center rounded-xl active:scale-90 ${
+                  active ? 'bg-boat-700 text-white' : 'bg-white text-boat-700'
+                }`}
+              >
+                <Icon icon={key} width={24} height={24} />
+              </button>
+            );
+          })}
+        {ready && results.length === 0 && (
           <p className="col-span-6 py-4 text-center text-sm text-boat-400">
             {t.iconPicker.noIcons}
+          </p>
+        )}
+        {ready && capped && (
+          <p className="col-span-6 py-2 text-center text-xs text-boat-400">
+            {t.iconPicker.refineSearch}
           </p>
         )}
       </div>

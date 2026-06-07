@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareEvents, sortEvents } from './ordering';
+import { compareEvents, compareKey, keyOf, sortEvents } from './ordering';
 import type { AppEvent } from '@/types/events';
 
 function ev(id: string, occurredAt: string, deviceId: string, seq: number): AppEvent {
@@ -42,5 +42,21 @@ describe('compareEvents — ordre determinista (occurredAt, deviceId, seq)', () 
     const sorted = sortEvents(arr);
     expect(sorted[0]!.id).toBe('b');
     expect(arr[0]!.id).toBe('a'); // original intacte
+  });
+
+  it('compareKey té el mateix signe que compareEvents (paritat — crític per a les barreres)', () => {
+    const samples = [
+      ev('1', '2026-01-01T00:00:00Z', 'A', 1),
+      ev('2', '2026-01-01T00:00:00Z', 'A', 2),
+      ev('3', '2026-01-01T00:00:00Z', 'B', 1),
+      ev('4', '2026-01-02T00:00:00Z', 'A', 1),
+    ];
+    for (const a of samples) {
+      for (const b of samples) {
+        expect(Math.sign(compareKey(keyOf(a), keyOf(b)))).toBe(
+          Math.sign(compareEvents(a, b)),
+        );
+      }
+    }
   });
 });

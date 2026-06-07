@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { deriveInventory, deriveQuantity } from './derive';
-import type { AppEvent, StockDeltaLine } from '@/types/events';
+import type {
+  AppEvent,
+  StockDeltaLine,
+  StockBarrierEvent,
+  StockBarrierMode,
+  OrderKey,
+} from '@/types/events';
 
 // ── helpers de construcció d'esdeveniments per a tests ───────────────────────
 let counter = 0;
@@ -22,6 +28,30 @@ function ev(
   };
 }
 const line = (objectId: string, delta: number): StockDeltaLine => ({ objectId, delta });
+
+function barrier(
+  deviceId: string,
+  seq: number,
+  occurredAt: string,
+  mode: StockBarrierMode,
+  cut: OrderKey,
+): StockBarrierEvent {
+  return {
+    id: `bar-${++counter}`,
+    type: 'stock_barrier',
+    occurredAt,
+    deviceId,
+    userName: 'test',
+    seq,
+    mode,
+    cut,
+  };
+}
+const keyOf = (e: AppEvent): OrderKey => ({
+  occurredAt: e.occurredAt,
+  deviceId: e.deviceId,
+  seq: e.seq,
+});
 
 describe('deriveInventory — regla d\'or (saturació per pas)', () => {
   it('+2, −3, −1, +1 → 1 (NO sumar-i-saturar, que donaria 0)', () => {
@@ -113,5 +143,77 @@ describe('deriveInventory — diverses línies i objectes', () => {
     ];
     const inv = deriveInventory(events);
     expect(inv.size).toBe(0);
+  });
+});
+
+describe('deriveInventory — barreres de tall (rewind / reset)', () => {
+  const t = (s: string) => `2026-01-01T0${s}:00Z`;
+
+  it('rewind conserva l\'event diana i ignora els posteriors', () => {
+    const e1 = ev('d', 1, t('0'), [line('egg', +5)]);
+    const e2 = ev('d', 2, t('1'), [line('egg', -2)]); // diana → estat 3
+    const e3 = ev('d', 3, t('2'), [line('egg', -1)]); // posterior → ignorat
+    const bar = barrier('d', 4, t('3'), 'rewind', keyOf(e2));
+    expect(deriveQuantity('egg', [e1, e2, e3, bar])).toBe(3);
+  });
+
+  it('reset ignora tot el passat → inventari buit/0', () => {
+    const e1 = ev('d', 1, t('0'), [line('egg', +5)]);
+    const e2 = ev('d', 2, t('1'), [line('flour', +3)]);
+    const bar = barrier('d', 3, t('2'), 'reset', keyOf({ ...e2, occurredAt: t('2'), seq: 3 } as AppEvent));
+    const inv = deriveInventory([e1, e2, bar]);
+    expect(inv.get('egg')?.quantity ?? 0).toBe(0);
+    expect(inv.get('flour')?.quantity ?? 0).toBe(0);
+  });
+
+  it('reset conserva els deltes POSTERIORS al reset', () => {
+    const e1 = ev('d', 1, t('0'), [line('egg', +5)]);
+    const resetKey: OrderKey = { occurredAt: t('1'), deviceId: 'd', seq: 2 };
+    const bar = barrier('d', 2, t('1'), 'reset', resetKey);
+    const e2 = ev('d', 3, t('2'), [line('egg', +2)]); // després del reset → compta
+    expect(deriveQuantity('egg', [e1, bar, e2])).toBe(2);
+  });
+
+  it('val L\'ÚLTIMA barrera emesa (des-rebobinar)', () => {
+    const e1 = ev('d', 1, t('0'), [line('egg', +5)]);
+    const e2 = ev('d', 2, t('1'), [line('egg', -2)]); // estat 3
+    const e3 = ev('d', 3, t('2'), [line('egg', +4)]); // estat 7
+    const rw1 = barrier('d', 4, t('3'), 'rewind', keyOf(e1)); // talla a e1 → 5
+    const rw2 = barrier('d', 5, t('4'), 'rewind', keyOf(e3)); // posterior → talla a e3 → 7
+    expect(deriveQuantity('egg', [e1, e2, e3, rw1, rw2])).toBe(7);
+  });
+
+  it('deltes "ressuscitats" anteriors al reset s\'ignoren (cas offline)', () => {
+    // Simula: després d\'un reset, un delta vell (clau anterior) torna al log.
+    const resetKey: OrderKey = { occurredAt: t('5'), deviceId: 'd', seq: 1 };
+    const bar = barrier('d', 1, t('5'), 'reset', resetKey);
+    const old = ev('z', 9, t('0'), [line('egg', +99)]); // clau anterior al reset
+    expect(deriveQuantity('egg', [bar, old])).toBe(0);
+  });
+
+  it('reset amb objecte amb caducitat → lots buits', () => {
+    const obj = new Map([
+      [
+        'milk',
+        {
+          id: 'milk',
+          name: 'Llet',
+          stockType: 'food' as const,
+          quantityType: 'units' as const,
+          usualLocationIds: [],
+          expiry: { mode: 'define_on_add' as const },
+          createdAt: t('0'),
+          updatedAt: t('0'),
+        },
+      ],
+    ]);
+    const e1: AppEvent = {
+      ...ev('d', 1, t('0'), [{ objectId: 'milk', delta: +3, expiresAt: t('9') }]),
+    };
+    const resetKey: OrderKey = { occurredAt: t('1'), deviceId: 'd', seq: 2 };
+    const bar = barrier('d', 2, t('1'), 'reset', resetKey);
+    const inv = deriveInventory([e1, bar], obj);
+    expect(inv.get('milk')?.quantity ?? 0).toBe(0);
+    expect(inv.get('milk')?.lots ?? []).toEqual([]);
   });
 });

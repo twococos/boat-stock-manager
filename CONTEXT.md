@@ -80,6 +80,15 @@ Després de cada escriptura local i de cada pull, es recalcula TOT el derivat de
 ([src/db/recompute.ts](src/db/recompute.ts)). El volum és minúscul; no hi ha snapshots
 (deliberadament).
 
+### Barrera de tall (rebobinar / reiniciar estoc)
+L'event `stock_barrier` (mode `rewind`/`reset`) fa que la derivació **ignori** certs
+`stock_delta` d'un costat del tall sense trencar la correcció (és determinista: tots els
+dispositius deriven igual). Val l'última barrera per ordre `(occurredAt, deviceId, seq)`.
+**Només afecta l'estoc** — objectes/llocs/receptes/checklists es conserven sempre. El reset,
+a més, fa neteja física (local + RPC `reset_stock_events` al servidor) i es protegeix del cas
+multi-dispositiu offline amb tres capes (check-abans-push, cascada-al-pull, barrera persistent).
+Lògica a [src/domain/inventory/barrier.ts](src/domain/inventory/barrier.ts) i `derive.ts`.
+
 ---
 
 ## 4. Model de dades
@@ -152,7 +161,7 @@ src/
   features/      cook/, purchase/, objects/, recipes/, locations/ (components)
   components/ui/ Button, Sheet, SyncIndicator, common (EmptyState, NumberStepper, etc.)
   lib/           id (uuid v7), deviceId, time, format
-supabase/        migrations/0001..0005 + README (instruccions de posada en marxa)
+supabase/        migrations/0001..0007 + README (instruccions de posada en marxa)
 ```
 
 ---
@@ -186,15 +195,19 @@ supabase/        migrations/0001..0005 + README (instruccions de posada en marxa
 
 **Completat i verificat** (les 16 fases del PLA.md): scaffold, tipus, domini + tests,
 Dexie, auth, migracions Supabase, motor de sync, totes les pantalles, backup, polish PWA,
-configs de desplegament. `tsc` net, **21 tests passen**, build de producció OK.
+configs de desplegament. `tsc` net, **36 tests passen**, build de producció OK.
 
-**Funciona ja en "mode local"** sense Supabase (si no hi ha `.env.local`, tot va offline
-i el login només demana el nom). Per activar el núvol cal seguir
-[supabase/README.md](supabase/README.md) i omplir `.env.local` (no versionat).
+**Supabase OPERATIU:** el projecte al núvol està en marxa amb **totes les migracions
+aplicades (0001..0007)**. La sincronització de punta a punta funciona; per connectar-hi cal
+`.env.local` (no versionat) amb les credencials. Sense `.env.local` l'app segueix funcionant en
+**"mode local"** offline (el login només demana el nom; les crides al núvol són no-op).
+
+**Historial: rebobinar i reiniciar estoc** — implementat (veure §3 "Barrera de tall"). A
+[src/routes/History.tsx](src/routes/History.tsx): clicar un moviment el desplega amb "Rebobinar
+fins aquí"; botó "Esborrar tot l'historial" al final. Confirmació en dos passos amb
+[src/components/ui/ConfirmAction.tsx](src/components/ui/ConfirmAction.tsx).
 
 **El que NO està fet / pendent natural:**
-- Posar en marxa el projecte Supabase real i provar la sincronització de punta a punta
-  (requereix credencials que l'usuari ha de crear).
 - Gasoil i aigua de tancs (diferit per acord).
 - Icones PWA reals (ara hi ha placeholders blaus a `public/icons/`).
 - Captura/visualització de fotos a la UI: la infraestructura hi és
@@ -207,7 +220,7 @@ i el login només demana el nom). Per activar el núvol cal seguir
 
 ```powershell
 npx tsc -b --noEmit        # ha de dir res (sense errors)
-npx vitest run             # 21 tests han de passar
+npx vitest run             # 36 tests han de passar
 npm run build              # ha de generar dist/sw.js + manifest
 ```
 

@@ -33,6 +33,8 @@ import {
   Pencil,
   Minus,
   X,
+  RotateCcw,
+  History,
   type LucideIcon,
 } from 'lucide-react';
 import type { StockDeltaReason } from '@/types/events';
@@ -65,6 +67,8 @@ export {
   Pencil,
   Minus,
   X,
+  RotateCcw,
+  History,
 };
 export type { LucideIcon };
 

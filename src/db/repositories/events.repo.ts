@@ -1,5 +1,6 @@
 import { db, type LocalEvent } from '../db';
-import type { AppEvent } from '@/types/events';
+import type { AppEvent, OrderKey } from '@/types/events';
+import { compareKey, keyOf } from '@/domain/inventory/ordering';
 
 /** Afegeix un esdeveniment local nou (pendent de sincronitzar). */
 export async function addLocalEvent(event: AppEvent): Promise<void> {
@@ -51,6 +52,31 @@ export function stripLocalMeta(row: LocalEvent): AppEvent {
   void _pending;
   void _serverSeq;
   return event as AppEvent;
+}
+
+/**
+ * Neteja física després d'un reset: esborra localment els `stock_delta` anteriors al tall
+ * (clau < cut) i totes les `stock_barrier` EXCEPTE la d'id `keepBarrierId` (la barrera de
+ * reset nova, que es conserva com a salvaguarda determinista).
+ *
+ * No és la font de correcció (la garanteix la barrera a la derivació); només allibera espai
+ * i evita que els events vells es repugin. Reutilitzada pel command de reset i per la neteja
+ * en cascada del sync en veure un reset nou. Retorna quants esdeveniments ha tret.
+ */
+export async function purgeBeforeBarrier(
+  cut: OrderKey,
+  keepBarrierId: string,
+): Promise<number> {
+  const rows = await db.events.toArray();
+  const toDelete = rows.filter((r) => {
+    if (r.type === 'stock_barrier') return r.id !== keepBarrierId;
+    if (r.type === 'stock_delta') return compareKey(keyOf(r), cut) < 0;
+    return false;
+  });
+  if (toDelete.length > 0) {
+    await db.events.bulkDelete(toDelete.map((r) => r.id));
+  }
+  return toDelete.length;
 }
 
 const UUID_RE =

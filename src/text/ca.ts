@@ -343,6 +343,18 @@ export const ca = {
       purchase: 'Compra',
       adjustment: 'Ajust',
     } as Record<string, string>,
+    /** Rebobinar / esborrar historial d'estoc. */
+    rewindHere: 'Rebobinar fins aquí',
+    rewindConfirm:
+      "Es tornarà l'estoc a l'estat d'aquest punt. Els moviments posteriors s'ignoraran (no s'esborren; ho pots desfer rebobinant a un punt més recent). Continuar?",
+    resetAll: "Esborrar tot l'historial d'estoc",
+    resetConfirm:
+      "Es reiniciarà TOT l'estoc a 0 i s'esborrarà l'historial de moviments. Els objectes, llocs, receptes i checklists ES CONSERVEN. Continuar?",
+    rewindEntryTitle: 'Rebobinat fins aquí',
+    resetEntryTitle: 'Estoc reiniciat',
+    cutAway: 'Ignorat per rebobinat',
+    showRewound: (n: number) =>
+      n === 1 ? '1 moviment rebobinat' : `${n} moviments rebobinats`,
   },
 
   /** Caduca aviat. */

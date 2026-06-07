@@ -3,14 +3,40 @@ import { rowToEvent, eventToBatchItem, type EventRow } from './mappers';
 import { flushPendingPhotos } from './photoQueue';
 import {
   getPendingEvents,
+  getAllEvents,
   markSynced,
   upsertRemoteEvents,
   stripLocalMeta,
   purgeNonUuidUpserts,
+  purgeBeforeBarrier,
 } from '@/db/repositories/events.repo';
 import { getMeta, putMeta } from '@/db/repositories/meta.repo';
 import { recomputeAll } from '@/db/recompute';
+import { activeResetBarrier } from '@/domain/inventory/barrier';
 import { nowISO } from '@/lib/time';
+import type { AppEvent, OrderKey } from '@/types/events';
+
+/**
+ * Demana al servidor que esborri els stock_delta anteriors al tall i les barreres velles,
+ * conservant la barrera de reset nova. Best-effort: si Supabase no està configurat o falla
+ * (offline), no passa res — la correcció la garanteix la barrera persistent, no aquest DELETE.
+ */
+export async function requestServerReset(
+  cut: OrderKey,
+  keepBarrierId: string,
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase.rpc('reset_stock_events', {
+      cut_occurred_at: cut.occurredAt,
+      cut_device_id: cut.deviceId,
+      cut_seq: cut.seq,
+      keep_barrier_id: keepBarrierId,
+    });
+  } catch (error) {
+    console.error('[sync] reset_stock_events error:', error);
+  }
+}
 
 export interface SyncResult {
   ok: boolean;
@@ -66,6 +92,21 @@ async function runSync(): Promise<SyncResult> {
     const purged = await purgeNonUuidUpserts();
     if (purged > 0) await recomputeAll();
 
+    // ── 0b. RESET conegut: no repugem stock_delta anteriors a un reset ─────────
+    // Si ja coneixem una barrera de reset (local o sincronitzada), netegem els events
+    // locals anteriors ABANS del push perquè un dispositiu que torna online no reinjecti
+    // estoc vell al servidor. La barrera persistent ho cobriria igual, però així evitem
+    // el viatge d'anada i tornada.
+    let purgedByReset = false;
+    {
+      const allLocal = await getAllEvents();
+      const reset = activeResetBarrier(allLocal);
+      if (reset) {
+        const removed = await purgeBeforeBarrier(reset.cut, reset.id);
+        if (removed > 0) purgedByReset = true;
+      }
+    }
+
     // ── 1. PUSH ──────────────────────────────────────────────────────────────
     const pending = await getPendingEvents();
     let pushed = 0;
@@ -87,17 +128,27 @@ async function runSync(): Promise<SyncResult> {
 
     const rows = (data ?? []) as EventRow[];
     let pulled = 0;
+    let purgedByPulledReset = false;
     if (rows.length > 0) {
+      const pulledEvents: AppEvent[] = rows.map(rowToEvent);
       await upsertRemoteEvents(rows.map(rowToEvent));
       meta.lastServerSeq = rows[rows.length - 1]!.server_seq;
       pulled = rows.length;
+
+      // Cascada: si hem baixat una barrera de reset, netegem localment els events
+      // anteriors (cada dispositiu fa la seva neteja sense coordinació).
+      const reset = activeResetBarrier(pulledEvents);
+      if (reset) {
+        const removed = await purgeBeforeBarrier(reset.cut, reset.id);
+        if (removed > 0) purgedByPulledReset = true;
+      }
     }
 
     // ── 3. FOTOS ─────────────────────────────────────────────────────────────
     const photos = await flushPendingPhotos();
 
     // ── 4. RECOMPUTE ─────────────────────────────────────────────────────────
-    if (pulled > 0 || pushed > 0) {
+    if (pulled > 0 || pushed > 0 || purgedByReset || purgedByPulledReset) {
       await recomputeAll();
     }
 

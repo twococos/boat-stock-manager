@@ -1,6 +1,7 @@
 import type { ID, InventoryEntry, ItemObject, ExpiryLot } from '@/types/entities';
-import type { AppEvent, StockDeltaEvent } from '@/types/events';
-import { sortEvents } from './ordering';
+import type { AppEvent, StockDeltaEvent, StockBarrierEvent, OrderKey } from '@/types/events';
+import { sortEvents, compareKey, keyOf } from './ordering';
+import { activeBarrier } from './barrier';
 import { applyLotDelta, lotsTotal } from './lots';
 
 /**
@@ -25,11 +26,28 @@ import { applyLotDelta, lotsTotal } from './lots';
  * @param objectsById Mapa de definicions d'objecte (per a la política de caducitat).
  *   Pot estar buit o incomplet: en aquest cas l'objecte es tracta sense caducitat.
  */
+/**
+ * Decideix si un stock_delta (per la seva clau d'ordre) queda IGNORAT per una barrera.
+ *
+ * - rewind: s'ignoren els deltes ESTRICTAMENT posteriors al tall (`> cut`). L'event diana
+ *   (clau == cut) i els anteriors es conserven → "torna a l'estat just després d'aquí".
+ * - reset: s'ignora tot el passat (`< cut`, on cut és la clau del propi event reset). Com
+ *   cap delta comparteix la clau del reset, només sobreviuen els deltes posteriors al reset.
+ */
+export function isCutAway(deltaKey: OrderKey, barrier: StockBarrierEvent): boolean {
+  const cmp = compareKey(deltaKey, barrier.cut);
+  return barrier.mode === 'rewind' ? cmp > 0 : cmp < 0;
+}
+
 export function deriveInventory(
   events: readonly AppEvent[],
   objectsById: ReadonlyMap<ID, ItemObject> = new Map(),
 ): Map<ID, InventoryEntry> {
   const sorted = sortEvents(events);
+
+  // Barrera de tall activa (l'última per ordre determinista). Determina quins stock_delta
+  // s'ignoren: rewind conserva l'event diana, reset ignora tot el passat. Veure barrier.ts.
+  const barrier = activeBarrier(sorted);
 
   // Acumuladors per objecte.
   const quantity = new Map<ID, number>();
@@ -38,6 +56,7 @@ export function deriveInventory(
 
   for (const ev of sorted) {
     if (ev.type !== 'stock_delta') continue;
+    if (barrier && isCutAway(keyOf(ev), barrier)) continue;
     const delta = ev as StockDeltaEvent;
 
     for (let i = 0; i < delta.lines.length; i++) {

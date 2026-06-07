@@ -9,6 +9,9 @@ import type {
   StockDeltaEvent,
   StockDeltaLine,
   StockDeltaReason,
+  StockBarrierEvent,
+  StockBarrierMode,
+  OrderKey,
   ObjectUpsertEvent,
   LocationUpsertEvent,
   RecipeUpsertEvent,
@@ -62,6 +65,22 @@ export function makeStockDeltaEvent(
     lines,
     ...(extra?.recipeId !== undefined ? { recipeId: extra.recipeId } : {}),
     ...(extra?.diners !== undefined ? { diners: extra.diners } : {}),
+  };
+}
+
+// ── barreres de tall (rebobinar / esborrar historial d'estoc) ────────────────
+export function makeStockBarrierEvent(
+  ctx: EventContext,
+  mode: StockBarrierMode,
+  cut: OrderKey,
+  targetEventId?: ID | null,
+): StockBarrierEvent {
+  return {
+    ...base(ctx),
+    type: 'stock_barrier',
+    mode,
+    cut,
+    ...(targetEventId !== undefined ? { targetEventId } : {}),
   };
 }
 

@@ -5,9 +5,10 @@ import type {
   ChecklistTemplate,
   ID,
 } from '@/types/entities';
-import type { AppEvent, StockDeltaLine, StockDeltaReason } from '@/types/events';
+import type { AppEvent, StockDeltaLine, StockDeltaReason, OrderKey } from '@/types/events';
 import {
   makeStockDeltaEvent,
+  makeStockBarrierEvent,
   makeObjectUpsertEvent,
   makeLocationUpsertEvent,
   makeRecipeUpsertEvent,
@@ -18,9 +19,11 @@ import {
   makeChecklistDeleteEvent,
   type EventContext,
 } from '@/domain/events/factories';
-import { addLocalEvent } from './repositories/events.repo';
+import { addLocalEvent, purgeBeforeBarrier } from './repositories/events.repo';
 import { getMeta, nextLocalSeq } from './repositories/meta.repo';
 import { recomputeAll } from './recompute';
+import { requestServerReset } from '@/sync/syncEngine';
+import { nowISO } from '@/lib/time';
 
 /**
  * Capa de comandes: porta ÚNICA d'escriptura per a la UI.
@@ -53,6 +56,39 @@ export async function commitStockDelta(
 ): Promise<void> {
   const ctx = await buildContext(userName);
   await commit(makeStockDeltaEvent(ctx, reason, lines, extra));
+}
+
+// ── barreres de tall (rebobinar / esborrar historial d'estoc) ────────────────
+/**
+ * Rebobina l'estoc fins a un event de l'historial: emet una barrera `rewind` que fa que la
+ * derivació ignori els stock_delta posteriors a `target` (l'event diana es conserva). No
+ * esborra res; és reversible emetent un rewind a un punt més recent.
+ */
+export async function commitStockRewind(
+  userName: string,
+  target: OrderKey,
+  targetEventId: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeStockBarrierEvent(ctx, 'rewind', target, targetEventId));
+}
+
+/**
+ * Reinicia tot l'estoc a 0: emet una barrera `reset` (que ignora tot el passat) i després
+ * fa neteja física best-effort (local + servidor) esborrant els stock_delta i barreres
+ * vells, conservant la barrera de reset nova com a salvaguarda. NOMÉS afecta l'estoc;
+ * objectes/llocs/receptes/checklists es conserven.
+ */
+export async function commitStockReset(userName: string): Promise<void> {
+  const base = await buildContext(userName);
+  const ctx = { ...base, occurredAt: nowISO() };
+  const cut: OrderKey = { occurredAt: ctx.occurredAt, deviceId: ctx.deviceId, seq: ctx.seq };
+  const event = makeStockBarrierEvent(ctx, 'reset', cut, null);
+  await commit(event);
+  // Neteja física oportunista (no afecta la correcció; la garanteix la barrera).
+  await purgeBeforeBarrier(cut, event.id);
+  await requestServerReset(cut, event.id);
+  await recomputeAll();
 }
 
 // ── upserts de definició ─────────────────────────────────────────────────────

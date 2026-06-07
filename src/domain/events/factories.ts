@@ -3,6 +3,8 @@ import type {
   StowageLocation,
   Recipe,
   ChecklistTemplate,
+  ResourceConfig,
+  WaterTank,
   ID,
 } from '@/types/entities';
 import type {
@@ -20,6 +22,12 @@ import type {
   LocationDeleteEvent,
   RecipeDeleteEvent,
   ChecklistDeleteEvent,
+  ResourceConfigUpsertEvent,
+  FuelMeasureEvent,
+  WaterMeasureEvent,
+  WaterRefillEvent,
+  GasMeasureEvent,
+  GasSwapEvent,
 } from '@/types/events';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
@@ -140,4 +148,58 @@ export function makeChecklistDeleteEvent(
   targetId: ID,
 ): ChecklistDeleteEvent {
   return { ...base(ctx), type: 'checklist_delete', targetId };
+}
+
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+export function makeResourceConfigUpsertEvent(
+  ctx: EventContext,
+  payload: ResourceConfig,
+): ResourceConfigUpsertEvent {
+  return { ...base(ctx), type: 'resource_config_upsert', payload };
+}
+
+export function makeFuelMeasureEvent(
+  ctx: EventContext,
+  data: { percent?: number; refillToFull?: boolean; addedLiters?: number },
+): FuelMeasureEvent {
+  return {
+    ...base(ctx),
+    type: 'fuel_measure',
+    ...(data.percent !== undefined ? { percent: data.percent } : {}),
+    ...(data.refillToFull !== undefined ? { refillToFull: data.refillToFull } : {}),
+    ...(data.addedLiters !== undefined ? { addedLiters: data.addedLiters } : {}),
+  };
+}
+
+export function makeWaterMeasureEvent(
+  ctx: EventContext,
+  counter: number,
+  activeTank: WaterTank,
+): WaterMeasureEvent {
+  return { ...base(ctx), type: 'water_measure', counter, activeTank };
+}
+
+export function makeWaterRefillEvent(
+  ctx: EventContext,
+  tank: WaterTank,
+  data: { toFull?: boolean; addedLiters?: number },
+): WaterRefillEvent {
+  return {
+    ...base(ctx),
+    type: 'water_refill',
+    tank,
+    ...(data.toFull !== undefined ? { toFull: data.toFull } : {}),
+    ...(data.addedLiters !== undefined ? { addedLiters: data.addedLiters } : {}),
+  };
+}
+
+export function makeGasMeasureEvent(
+  ctx: EventContext,
+  weightKg: number,
+): GasMeasureEvent {
+  return { ...base(ctx), type: 'gas_measure', weightKg };
+}
+
+export function makeGasSwapEvent(ctx: EventContext): GasSwapEvent {
+  return { ...base(ctx), type: 'gas_swap' };
 }

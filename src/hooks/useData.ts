@@ -1,6 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/db';
-import type { ID, InventoryEntry, ItemObject, StowageLocation } from '@/types/entities';
+import type {
+  ID,
+  InventoryEntry,
+  ItemObject,
+  StowageLocation,
+  ResourceConfig,
+  ResourceKind,
+  ResourceState,
+} from '@/types/entities';
 import { HEADER_LOCATION_ID } from '@/features/locations/headerLocation';
 
 /**
@@ -51,3 +59,20 @@ export function useQuantity(objectId: ID): number {
   const entry = useLiveQuery(() => db.inventory.get(objectId), [objectId]);
   return entry?.quantity ?? 0;
 }
+
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+/** Estats derivats de tots els recursos continus, reactiu. */
+export const useResourceStates = () =>
+  useLiveQuery(() => db.resourceStates.toArray(), [], []);
+
+/** Configs derivades de tots els recursos continus, reactiu. */
+export const useResourceConfigs = () =>
+  useLiveQuery(() => db.resourceConfigs.toArray(), [], []);
+
+/** Estat d'un recurs concret (o undefined fins que es deriva), reactiu. */
+export const useResourceState = (kind: ResourceKind): ResourceState | undefined =>
+  useLiveQuery(() => db.resourceStates.get(kind), [kind]);
+
+/** Config d'un recurs concret (o undefined), reactiu. */
+export const useResourceConfig = (kind: ResourceKind): ResourceConfig | undefined =>
+  useLiveQuery(() => db.resourceConfigs.get(kind), [kind]);

@@ -5,6 +5,9 @@ import { SyncProvider } from './sync/SyncProvider';
 import { Layout } from './routes/Layout';
 import { Home } from './routes/Home';
 import { CookMenu } from './routes/CookMenu';
+import { MeasureMenu } from './routes/MeasureMenu';
+import { ResourceDetail } from './routes/ResourceDetail';
+import { Guide } from './routes/Guide';
 import { PurchaseFlow } from './routes/PurchaseFlow';
 import { ObjectsList } from './routes/ObjectsList';
 import { LocationsList } from './routes/LocationsList';
@@ -25,6 +28,9 @@ const router = createHashRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'cook', element: <CookMenu /> },
+      { path: 'measure', element: <MeasureMenu /> },
+      { path: 'resources/:kind', element: <ResourceDetail /> },
+      { path: 'guide', element: <Guide /> },
       { path: 'purchase', element: <PurchaseFlow /> },
       { path: 'objects', element: <ObjectsList /> },
       { path: 'objects/recipes', element: <Recipes /> },

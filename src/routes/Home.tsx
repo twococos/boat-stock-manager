@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ItemObject } from '@/types/entities';
-import { Card } from '@/components/ui/common';
+import { Card, ProgressBar } from '@/components/ui/common';
 import { Sheet } from '@/components/ui/Sheet';
-import { ChefHat, ShoppingCart, ThumbsUp } from '@/components/ui/icons';
+import {
+  ChefHat,
+  ShoppingCart,
+  ThumbsUp,
+  Book,
+  Gauge,
+  resourceIcon,
+} from '@/components/ui/icons';
 import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { ObjectDetail } from '@/features/objects/ObjectDetail';
-import { useDurations, useExpiring } from '@/hooks/useDerived';
+import { useDurations, useExpiring, useResourceDurations } from '@/hooks/useDerived';
 import { useObjects, useInventoryMap } from '@/hooks/useData';
 import { formatQuantity } from '@/lib/format';
 import { t } from '@/text';
@@ -15,6 +22,7 @@ import { t } from '@/text';
 export function Home() {
   const navigate = useNavigate();
   const durations = useDurations();
+  const resourceRows = useResourceDurations();
   const expiring = useExpiring(7);
   const objects = useObjects() ?? [];
   const invMap = useInventoryMap();
@@ -35,11 +43,29 @@ export function Home() {
           <span className="text-lg font-bold">{t.home.cook}</span>
         </button>
         <button
-          onClick={() => navigate('/purchase')}
+          onClick={() => navigate('/guide')}
           className="flex min-h-[7rem] flex-col items-center justify-center gap-1 rounded-3xl bg-boat-500 text-white shadow active:scale-95"
         >
-          <ShoppingCart size={40} />
-          <span className="text-lg font-bold">{t.home.buy}</span>
+          <Book size={40} />
+          <span className="text-lg font-bold">{t.home.guide}</span>
+        </button>
+      </div>
+
+      {/* Botons petits secundaris (meitat d'alçada) */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => navigate('/purchase')}
+          className="flex min-h-touch flex-row items-center justify-center gap-2 rounded-2xl bg-boat-100 text-boat-900 shadow-sm active:scale-95"
+        >
+          <ShoppingCart size={24} />
+          <span className="text-sm font-semibold">{t.home.buy}</span>
+        </button>
+        <button
+          onClick={() => navigate('/measure')}
+          className="flex min-h-touch flex-row items-center justify-center gap-2 rounded-2xl bg-boat-100 text-boat-900 shadow-sm active:scale-95"
+        >
+          <Gauge size={24} />
+          <span className="text-sm font-semibold">{t.home.measure}</span>
         </button>
       </div>
 
@@ -93,6 +119,47 @@ export function Home() {
               <div key={d.key}>{inner}</div>
             );
           })}
+        </section>
+      )}
+
+      {/* Recursos continus: gasoil, aigua de tancs, gas */}
+      {resourceRows.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-boat-700">{t.home.resourcesCard}</h2>
+          <Card className="flex flex-col gap-3">
+            {resourceRows.map((r) => {
+              const Icon = resourceIcon(r.kind);
+              return (
+                <button
+                  key={r.kind}
+                  onClick={() => navigate(`/resources/${r.kind}`)}
+                  className="flex items-center gap-3 active:scale-[0.98]"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+                    <Icon size={22} className="text-boat-700" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">{t.resources.kind[r.kind]}</span>
+                      <span className="text-sm font-bold text-boat-700">
+                        {r.percent === null ? '—' : `${Math.round(r.percent)}%`}
+                      </span>
+                    </span>
+                    <ProgressBar percent={r.percent} className="mt-1" />
+                  </span>
+                  <span className="w-16 shrink-0 text-right text-xs">
+                    {r.daysRemaining === null ? (
+                      <span className="text-boat-400">{t.resources.noConsumption}</span>
+                    ) : (
+                      <span className="font-semibold text-boat-700">
+                        {t.resources.daysRemaining(r.daysRemaining)}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </Card>
         </section>
       )}
 

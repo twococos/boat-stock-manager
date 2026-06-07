@@ -6,6 +6,8 @@ import type {
   ChecklistTemplate,
   ChecklistProgress,
   InventoryEntry,
+  ResourceConfig,
+  ResourceState,
 } from '@/types/entities';
 import type { AppEvent } from '@/types/events';
 
@@ -52,6 +54,8 @@ export class BoatDB extends Dexie {
   checklistTemplates!: Table<ChecklistTemplate, string>;
   checklistProgress!: Table<ChecklistProgress, string>; // LOCAL ONLY
   inventory!: Table<InventoryEntry, string>; // CAU derivada
+  resourceConfigs!: Table<ResourceConfig, string>; // CAU derivada (recursos continus)
+  resourceStates!: Table<ResourceState, string>; // CAU derivada (recursos continus)
   pendingPhotos!: Table<PendingPhoto, string>;
   meta!: Table<SyncMeta, string>;
 
@@ -68,6 +72,13 @@ export class BoatDB extends Dexie {
       inventory: 'objectId',
       pendingPhotos: 'id',
       meta: 'key',
+    });
+    // v2: caus derivades dels recursos continus (gasoil, aigua de tancs, gas). Són
+    // projeccions del log (es regeneren a cada recompute), per això no cal migració de
+    // dades: només declarar els nous stores.
+    this.version(2).stores({
+      resourceConfigs: 'kind',
+      resourceStates: 'kind',
     });
   }
 }

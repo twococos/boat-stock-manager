@@ -2,6 +2,8 @@ import { db } from './db';
 import { getAllEvents } from './repositories/events.repo';
 import { deriveInventory } from '@/domain/inventory/derive';
 import { deriveDefinitions } from '@/domain/inventory/deriveDefinitions';
+import { deriveResourceConfig } from '@/domain/resources/deriveResourceConfig';
+import { deriveResources } from '@/domain/resources/deriveResources';
 
 /**
  * Recalcula tot l'estat derivat a partir del log d'esdeveniments i el desa a les caus
@@ -30,9 +32,21 @@ export async function recomputeAll(): Promise<void> {
     if (!defs.objects.has(objectId)) inventory.delete(objectId);
   }
 
+  // 4) Derivar els recursos continus (gasoil, aigua de tancs, gas) amb la seva config.
+  const resourceConfigs = deriveResourceConfig(events);
+  const resourceStates = deriveResources(events, resourceConfigs);
+
   await db.transaction(
     'rw',
-    [db.objects, db.locations, db.recipes, db.checklistTemplates, db.inventory],
+    [
+      db.objects,
+      db.locations,
+      db.recipes,
+      db.checklistTemplates,
+      db.inventory,
+      db.resourceConfigs,
+      db.resourceStates,
+    ],
     async () => {
       // Reemplaçar completament les caus (recompute-from-scratch).
       await Promise.all([
@@ -41,6 +55,8 @@ export async function recomputeAll(): Promise<void> {
         db.recipes.clear(),
         db.checklistTemplates.clear(),
         db.inventory.clear(),
+        db.resourceConfigs.clear(),
+        db.resourceStates.clear(),
       ]);
 
       await Promise.all([
@@ -49,6 +65,8 @@ export async function recomputeAll(): Promise<void> {
         db.recipes.bulkPut([...defs.recipes.values()]),
         db.checklistTemplates.bulkPut([...defs.checklistTemplates.values()]),
         db.inventory.bulkPut([...inventory.values()]),
+        db.resourceConfigs.bulkPut([...resourceConfigs.values()]),
+        db.resourceStates.bulkPut([...resourceStates.values()]),
       ]);
     },
   );

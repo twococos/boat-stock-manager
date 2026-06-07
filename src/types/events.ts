@@ -14,6 +14,8 @@ import type {
   StowageLocation,
   Recipe,
   ChecklistTemplate,
+  ResourceConfig,
+  WaterTank,
 } from './entities';
 
 export type EventType =
@@ -26,7 +28,14 @@ export type EventType =
   | 'object_delete'
   | 'location_delete'
   | 'recipe_delete'
-  | 'checklist_delete';
+  | 'checklist_delete'
+  // ── recursos continus (gasoil, aigua de tancs, gas) ──
+  | 'resource_config_upsert' // config sincronitzada d'un recurs (capacitats, pesos)
+  | 'fuel_measure' // mesura de gasoil (%) o omplir (PLE / litres)
+  | 'water_measure' // lectura del comptador d'aigua + tanc actiu del tram
+  | 'water_refill' // omplir un tanc (PLE / litres)
+  | 'gas_measure' // pes actual de la bombona
+  | 'gas_swap'; // canvi de bombona (reset a plena)
 
 /** Sobre comú a TOTS els esdeveniments (fila append-only del log). */
 export interface EventBase {
@@ -123,6 +132,59 @@ export interface ChecklistDeleteEvent extends EventBase {
   targetId: ID;
 }
 
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+// Mesures ABSOLUTES (no deltes). La derivació reprodueix-les en ordre per obtenir l'estat
+// actual i el consum. La config (capacitats/pesos) és un upsert sincronitzat. Veure
+// src/domain/resources/.
+
+/** Config sincronitzada d'un recurs (snapshot complet com a "delta"; last-writer-wins). */
+export interface ResourceConfigUpsertEvent extends EventBase {
+  type: 'resource_config_upsert';
+  payload: ResourceConfig;
+}
+
+/**
+ * Mesura de gasoil. O bé una lectura de nivell (`percent`), o bé un omplir: `refillToFull`
+ * (PLE) o `addedLiters` (litres afegits sobre l'últim nivell). Exactament un dels tres.
+ */
+export interface FuelMeasureEvent extends EventBase {
+  type: 'fuel_measure';
+  percent?: number; // 0..100
+  refillToFull?: boolean;
+  addedLiters?: number;
+}
+
+/**
+ * Lectura del comptador d'aigua. `counter` és el número del comptador analògic (sortida
+ * comuna); `activeTank` és el tanc del qual s'ha consumit fins ara. El consum del tram
+ * (counter − comptador anterior) s'atribueix a `activeTank`. Canviar de tanc obliga a
+ * emetre una mesura amb el comptador actual i el tanc nou (tanca el tram anterior net).
+ */
+export interface WaterMeasureEvent extends EventBase {
+  type: 'water_measure';
+  counter: number;
+  activeTank: WaterTank;
+}
+
+/** Omplir un tanc d'aigua: PLE (`toFull`) o `addedLiters`. */
+export interface WaterRefillEvent extends EventBase {
+  type: 'water_refill';
+  tank: WaterTank;
+  toFull?: boolean;
+  addedLiters?: number;
+}
+
+/** Pes actual de la bombona de gas (kg). */
+export interface GasMeasureEvent extends EventBase {
+  type: 'gas_measure';
+  weightKg: number;
+}
+
+/** Canvi de bombona de gas: torna a plena. */
+export interface GasSwapEvent extends EventBase {
+  type: 'gas_swap';
+}
+
 // ── unió discriminada ────────────────────────────────────────────────────────
 export type AppEvent =
   | StockDeltaEvent
@@ -134,4 +196,10 @@ export type AppEvent =
   | ObjectDeleteEvent
   | LocationDeleteEvent
   | RecipeDeleteEvent
-  | ChecklistDeleteEvent;
+  | ChecklistDeleteEvent
+  | ResourceConfigUpsertEvent
+  | FuelMeasureEvent
+  | WaterMeasureEvent
+  | WaterRefillEvent
+  | GasMeasureEvent
+  | GasSwapEvent;

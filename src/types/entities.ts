@@ -115,3 +115,44 @@ export interface InventoryEntry {
   quantity: number; // sempre >= 0
   lots?: ExpiryLot[]; // només menjar amb caducitat; consum FIFO
 }
+
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+// No són objectes d'inventari: es consumeixen de forma contínua i es mesuren de forma
+// absoluta (% de nivell, comptador, pes), no per deltes additius. Tenen un domini propi
+// paral·lel a l'inventari. Veure src/domain/resources/.
+export type ResourceKind = 'fuel' | 'water' | 'gas';
+export type WaterTank = 'proa' | 'popa';
+
+/**
+ * Configuració sincronitzada d'un recurs (singleton per `kind`; `kind` fa també d'id).
+ * Last-writer-wins per `updatedAt`, com els altres `*_upsert`. Només el bloc del propi
+ * `kind` és rellevant; els altres queden undefined.
+ */
+export interface ResourceConfig {
+  kind: ResourceKind; // també fa d'id
+  fuel?: { capacityLiters: number };
+  water?: { proaLiters: number; popaLiters: number };
+  gas?: { fullKg: number; emptyKg: number; netKg: number }; // p.ex. 6.55 / 3.8 / 2.75
+  updatedAt: ISOTimestamp;
+}
+
+/**
+ * Estat derivat d'un recurs (CAU, com InventoryEntry; resultat del fold de mesures).
+ * `percent` és 0..100, o null si encara no hi ha config o mesura suficient.
+ */
+export interface ResourceState {
+  kind: ResourceKind;
+  percent: number | null;
+  // gasoil
+  fuelLiters?: number;
+  // aigua
+  waterProaLiters?: number;
+  waterPopaLiters?: number;
+  waterTotalLiters?: number;
+  activeTank?: WaterTank;
+  lastCounter?: number;
+  // gas
+  gasWeightKg?: number;
+  // comú
+  lastMeasuredAt?: ISOTimestamp;
+}

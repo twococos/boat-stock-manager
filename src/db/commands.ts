@@ -3,6 +3,8 @@ import type {
   StowageLocation,
   Recipe,
   ChecklistTemplate,
+  ResourceConfig,
+  WaterTank,
   ID,
 } from '@/types/entities';
 import type { AppEvent, StockDeltaLine, StockDeltaReason, OrderKey } from '@/types/events';
@@ -17,6 +19,12 @@ import {
   makeLocationDeleteEvent,
   makeRecipeDeleteEvent,
   makeChecklistDeleteEvent,
+  makeResourceConfigUpsertEvent,
+  makeFuelMeasureEvent,
+  makeWaterMeasureEvent,
+  makeWaterRefillEvent,
+  makeGasMeasureEvent,
+  makeGasSwapEvent,
   type EventContext,
 } from '@/domain/events/factories';
 import { addLocalEvent, purgeBeforeBarrier } from './repositories/events.repo';
@@ -157,4 +165,52 @@ export async function commitChecklistDelete(
 ): Promise<void> {
   const ctx = await buildContext(userName);
   await commit(makeChecklistDeleteEvent(ctx, id));
+}
+
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+export async function commitResourceConfig(
+  userName: string,
+  payload: ResourceConfig,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeResourceConfigUpsertEvent(ctx, payload));
+}
+
+export async function commitFuelMeasure(
+  userName: string,
+  data: { percent?: number; refillToFull?: boolean; addedLiters?: number },
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeFuelMeasureEvent(ctx, data));
+}
+
+export async function commitWaterMeasure(
+  userName: string,
+  counter: number,
+  activeTank: WaterTank,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeWaterMeasureEvent(ctx, counter, activeTank));
+}
+
+export async function commitWaterRefill(
+  userName: string,
+  tank: WaterTank,
+  data: { toFull?: boolean; addedLiters?: number },
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeWaterRefillEvent(ctx, tank, data));
+}
+
+export async function commitGasMeasure(
+  userName: string,
+  weightKg: number,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeGasMeasureEvent(ctx, weightKg));
+}
+
+export async function commitGasSwap(userName: string): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeGasSwapEvent(ctx));
 }

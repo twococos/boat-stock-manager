@@ -81,3 +81,37 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
     <div className={`rounded-2xl bg-white p-4 shadow-sm ${className}`}>{children}</div>
   );
 }
+
+/**
+ * Barra de progrés horitzontal (0..100%). El color de l'ompliment vira a ambre per sota del
+ * 25% i a vermell per sota del 10% per donar senyal visual de nivell baix. `percent` null →
+ * barra buida (recurs encara sense mesura).
+ */
+export function ProgressBar({
+  percent,
+  className = '',
+}: {
+  percent: number | null;
+  className?: string;
+}) {
+  const p = percent === null ? 0 : Math.min(100, Math.max(0, percent));
+  const color =
+    percent === null
+      ? 'bg-boat-200'
+      : p < 10
+        ? 'bg-red-500'
+        : p < 25
+          ? 'bg-amber-500'
+          : 'bg-boat-500';
+  return (
+    <div
+      className={`h-2.5 w-full overflow-hidden rounded-full bg-boat-100 ${className}`}
+      role="progressbar"
+      aria-valuenow={Math.round(p)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${p}%` }} />
+    </div>
+  );
+}

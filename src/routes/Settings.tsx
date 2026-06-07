@@ -48,11 +48,11 @@ export function Settings() {
         <label className="text-sm font-medium text-boat-700">{t.settings.yourName}</label>
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded-xl border border-boat-100 px-4 py-3"
+            className="min-w-0 flex-1 rounded-xl border border-boat-100 px-4 py-3"
             value={name}
             onChange={(e) => setNameField(e.target.value)}
           />
-          <Button onClick={() => setName(name)} className="w-auto px-4">{t.common.save}</Button>
+          <Button onClick={() => setName(name)} className="!w-auto shrink-0 px-4">{t.common.save}</Button>
         </div>
       </Card>
 

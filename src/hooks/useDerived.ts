@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAllEvents, useInventory, useObjectsMap } from './useData';
+import {
+  useAllEvents,
+  useInventory,
+  useObjectsMap,
+  useResourceConfigs,
+  useResourceStates,
+} from './useData';
 import { estimateDuration, estimateWaterDuration } from '@/domain/inventory/duration';
+import { estimateResourceDuration } from '@/domain/resources/resourceDuration';
 import { stripLocalMeta } from '@/db/repositories/events.repo';
 import { getDurationWindowDays } from '@/auth/session';
 import { nowISO, diffDays } from '@/lib/time';
-import type { ItemObject, InventoryEntry } from '@/types/entities';
+import type {
+  ItemObject,
+  InventoryEntry,
+  ResourceKind,
+  ResourceState,
+} from '@/types/entities';
 import type { AppEvent } from '@/types/events';
 
 /** Finestra reactiva (dies) per estimar el ritme de consum; configurable a Ajustos. */
@@ -146,4 +158,63 @@ export function useExpiring(withinDays = 7): ExpiringRow[] {
     rows.sort((a, b) => a.daysLeft - b.daysLeft);
     return rows;
   }, [inventory, objectsMap, withinDays]);
+}
+
+// ── recursos continus (gasoil, aigua de tancs, gas) ──────────────────────────
+export interface ResourceDurationRow {
+  kind: ResourceKind;
+  state: ResourceState;
+  /** Percentatge 0..100 (o null si encara no hi ha mesura). */
+  percent: number | null;
+  /** Dies estimats que durarà al ritme dels últims `windowDays` (null si no hi ha dades). */
+  daysRemaining: number | null;
+}
+
+/**
+ * Files de durada dels recursos continus per a la targeta del dashboard i la pantalla de
+ * detall. El nivell restant actual ve de l'estat derivat (`deriveResources`): litres per
+ * gasoil/aigua, kg de gas net (pes − buit) per al gas.
+ */
+export function useResourceDurations(): ResourceDurationRow[] {
+  const rawEvents = useAllEvents();
+  const states = useResourceStates();
+  const configs = useResourceConfigs();
+  const windowDays = useDurationWindow();
+
+  return useMemo(() => {
+    const events: AppEvent[] = (rawEvents ?? []).map((r) => stripLocalMeta(r as never));
+    const now = nowISO();
+    const configByKind = new Map((configs ?? []).map((c) => [c.kind, c]));
+    const order: ResourceKind[] = ['fuel', 'water', 'gas'];
+    const stateByKind = new Map((states ?? []).map((s) => [s.kind, s]));
+
+    return order
+      .map((kind) => stateByKind.get(kind))
+      .filter((s): s is ResourceState => s !== undefined)
+      .map((state) => {
+        const config = configByKind.get(state.kind);
+        const currentLevel = currentLevelFor(state, config?.gas?.emptyKg);
+        const { daysRemaining } = estimateResourceDuration(
+          state.kind,
+          events,
+          config,
+          currentLevel,
+          windowDays,
+          now,
+        );
+        return { kind: state.kind, state, percent: state.percent, daysRemaining };
+      });
+  }, [rawEvents, states, configs, windowDays]);
+}
+
+/** Nivell restant actual en les unitats de la sèrie de consum (litres o kg de gas net). */
+function currentLevelFor(state: ResourceState, gasEmptyKg = 3.8): number | null {
+  switch (state.kind) {
+    case 'fuel':
+      return state.fuelLiters ?? null;
+    case 'water':
+      return state.waterTotalLiters ?? null;
+    case 'gas':
+      return state.gasWeightKg === undefined ? null : Math.max(0, state.gasWeightKg - gasEmptyKg);
+  }
 }

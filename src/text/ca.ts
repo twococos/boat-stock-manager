@@ -70,6 +70,8 @@ export const ca = {
   home: {
     cook: 'Cuinar',
     buy: 'Comprar',
+    guide: 'Guia',
+    measure: 'Mesura',
     estimatedDuration: 'Durada estimada',
     noConsumption: 'sense consum',
     expiringSoon: 'Caduca aviat',
@@ -78,6 +80,8 @@ export const ca = {
     drinkingWater: 'Aigua potable',
     noWaterObjects: "Cap objecte d'aigua definit.",
     litersPerBottle: (l: number) => `${l} L / ampolla`,
+    /** Títol de la targeta dels recursos continus. */
+    resourcesCard: 'Gasoil, Aigua i Gas',
   },
 
   /** Menú cuinar. */
@@ -112,6 +116,92 @@ export const ca = {
     confirmShort:
       "Falta estoc d'alguns ingredients. Si cuines igualment, el seu estoc quedarà a 0. Continuar?",
     cook: 'Cuinar',
+  },
+
+  /** Menú de selecció del recurs a mesurar. */
+  measureMenu: {
+    title: 'De què vols prendre mesura?',
+    back: '← Tornar',
+  },
+
+  /** Recursos continus: gasoil, aigua de tancs, gas. */
+  resources: {
+    /** Noms de cada recurs. */
+    kind: {
+      fuel: 'Gasoil',
+      water: 'Aigua',
+      gas: 'Gas',
+    } as Record<string, string>,
+    /** Noms dels tancs d'aigua. */
+    tank: {
+      proa: 'Proa',
+      popa: 'Popa',
+    } as Record<string, string>,
+    noConsumption: 'sense estimació',
+    daysRemaining: (n: number) => `~${Math.floor(n)} d`,
+    notMeasured: 'sense mesura',
+
+    // — accions —
+    addMeasure: 'Afegir mesura',
+    fill: 'Omplir',
+    full: 'PLE',
+    liters: 'Litres',
+    save: 'Desar',
+    cancel: 'Cancel·lar',
+
+    // — gasoil —
+    fuelLevel: 'Nivell (%)',
+    fuelLitersOf: (liters: number, cap: number) => `${Math.round(liters)} / ${cap} L`,
+    fuelCapacity: 'Capacitat del tanc (L)',
+
+    // — aigua —
+    activeTank: 'Tanc obert',
+    selectActiveTank: 'Quin tanc està obert?',
+    counter: 'Comptador',
+    counterReading: 'Lectura del comptador',
+    switchTankNeedsCounter:
+      'En canviar de tanc cal indicar la lectura actual del comptador.',
+    fillTank: (tank: string) => `Omplir ${tank}`,
+    tankLitersOf: (liters: number, cap: number) => `${Math.round(liters)} / ${cap} L`,
+    waterTotal: 'Total',
+    proaCapacity: 'Capacitat Proa (L)',
+    popaCapacity: 'Capacitat Popa (L)',
+
+    // — gas —
+    gasWeight: 'Pes de la bombona (kg)',
+    gasWeightOf: (kg: number) => `${Math.round(kg * 100) / 100} kg`,
+    swapBottle: 'Canviar bombona',
+    swapBottleConfirm: 'Canviar per una bombona plena? El pes tornarà a ple.',
+    gasFullKg: 'Pes ple (kg)',
+    gasEmptyKg: 'Pes buit (kg)',
+
+    // — config —
+    settings: 'Configuració',
+    settingsSaved: 'Configuració desada.',
+
+    // — historial de mesures —
+    historyTitle: 'Historial de mesures',
+    historyEmpty: 'Encara no hi ha mesures.',
+    /** Descripció curta de cada tipus d'event a l'historial. */
+    event: {
+      fuelMeasure: (p: number) => `Mesura: ${Math.round(p)}%`,
+      fuelRefillFull: 'Omplert: PLE',
+      fuelRefillLiters: (l: number) => `Omplert: +${l} L`,
+      waterMeasure: (counter: number, tank: string) => `Comptador ${counter} · ${tank}`,
+      waterRefillFull: (tank: string) => `Omplert ${tank}: PLE`,
+      waterRefillLiters: (tank: string, l: number) => `Omplert ${tank}: +${l} L`,
+      gasMeasure: (kg: number) => `Pes: ${Math.round(kg * 100) / 100} kg`,
+      gasSwap: 'Bombona canviada',
+      config: 'Configuració actualitzada',
+    },
+  },
+
+  /** Guia del vaixell (manual per a la tripulació). */
+  guide: {
+    title: 'Guia del vaixell',
+    intro: 'Dubtes habituals a bord. Toca un tema per saltar-hi.',
+    indexTitle: 'Temes',
+    empty: 'Encara no hi ha temes a la guia.',
   },
 
   /** Consum ràpid. */

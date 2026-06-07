@@ -17,6 +17,7 @@ import {
   ShoppingCart,
   Wrench,
   BookOpen,
+  Book,
   Droplet,
   Cookie,
   CakeSlice,
@@ -35,9 +36,15 @@ import {
   X,
   RotateCcw,
   History,
+  Fuel,
+  Droplets,
+  Gauge,
+  Anchor,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import type { StockDeltaReason } from '@/types/events';
+import type { ResourceKind } from '@/types/entities';
 
 export {
   Home,
@@ -51,6 +58,7 @@ export {
   ShoppingCart,
   Wrench,
   BookOpen,
+  Book,
   Droplet,
   Cookie,
   CakeSlice,
@@ -69,6 +77,11 @@ export {
   X,
   RotateCcw,
   History,
+  Fuel,
+  Droplets,
+  Gauge,
+  Anchor,
+  LifeBuoy,
 };
 export type { LucideIcon };
 
@@ -101,5 +114,17 @@ export function cookModeIcon(mode: CookMode): LucideIcon {
       return Croissant;
     case 'all':
       return Search;
+  }
+}
+
+/** Icona per a cada recurs continu (gasoil, aigua de tancs, gas). */
+export function resourceIcon(kind: ResourceKind): LucideIcon {
+  switch (kind) {
+    case 'fuel':
+      return Fuel;
+    case 'water':
+      return Droplets;
+    case 'gas':
+      return Flame;
   }
 }

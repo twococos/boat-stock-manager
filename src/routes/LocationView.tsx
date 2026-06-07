@@ -4,10 +4,13 @@ import type { ItemObject, StowageLocation } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
-import { Archive, Package, Pencil } from '@/components/ui/icons';
+import { Archive, Pencil } from '@/components/ui/icons';
+import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { LocationForm } from '@/features/locations/LocationForm';
+import { ObjectDetail } from '@/features/objects/ObjectDetail';
 import { useObjects, useLocations, useInventoryMap } from '@/hooks/useData';
+import { useLocationPhoto } from '@/hooks/useLocationPhoto';
 import { formatQuantity } from '@/lib/format';
 import {
   commitStockDelta,
@@ -15,6 +18,8 @@ import {
   commitLocationDelete,
 } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
+import { useEditLocked } from '@/hooks/useEditLocked';
+import { t } from '@/text';
 
 /**
  * Vista d'un compartiment: mostra els objectes que hi van guardats i permet corregir
@@ -28,8 +33,11 @@ export function LocationView() {
   const objects = useObjects() ?? [];
   const locations = useLocations() ?? [];
   const invMap = useInventoryMap();
+  const editLocked = useEditLocked();
 
   const location = locations.find((l) => l.id === id);
+  const photoUrl = useLocationPhoto(location?.photoPath);
+  const [detail, setDetail] = useState<ItemObject | null>(null);
   const [adjusting, setAdjusting] = useState<ItemObject | null>(null);
   const [newQty, setNewQty] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -64,33 +72,45 @@ export function LocationView() {
   }
 
   if (!location) {
-    return <EmptyState text="Lloc no trobat." />;
+    return <EmptyState text={t.locationView.notFound} />;
   }
 
   return (
     <div className="flex flex-col gap-3 pt-2">
       <button onClick={() => navigate('/locations')} className="self-start text-sm text-boat-600">
-        ← Llocs
+        {t.locationView.back}
       </button>
       <div className="flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <Archive size={22} className="text-boat-700" />
           {location.name}
         </h1>
-        <button
-          onClick={() => setEditing(true)}
-          className="flex items-center gap-1 text-sm text-boat-600"
-        >
-          <Pencil size={16} />
-          Editar
-        </button>
+        {!editLocked && (
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1 text-sm text-boat-600"
+          >
+            <Pencil size={16} />
+            {t.locationView.edit}
+          </button>
+        )}
       </div>
       {location.description && (
         <p className="text-sm text-boat-500">{location.description}</p>
       )}
 
+      {photoUrl && (
+        <div className="overflow-hidden rounded-3xl shadow-sm">
+          <img
+            src={photoUrl}
+            alt={t.locationView.photoAlt(location.name)}
+            className="max-h-64 w-full object-cover"
+          />
+        </div>
+      )}
+
       {here.length === 0 ? (
-        <EmptyState text="Cap objecte assignat a aquest lloc." />
+        <EmptyState text={t.locationView.noObjects} />
       ) : (
         <ul className="flex flex-col gap-2">
           {here.map((o) => {
@@ -98,15 +118,12 @@ export function LocationView() {
             return (
               <li key={o.id}>
                 <button
-                  onClick={() => {
-                    setAdjusting(o);
-                    setNewQty(qty);
-                  }}
+                  onClick={() => setDetail(o)}
                   className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center text-2xl">
-                      {o.icon ?? <Package size={22} className="text-boat-500" />}
+                    <span className="flex h-8 w-8 items-center justify-center">
+                      <ObjectIcon icon={o.icon} size={24} />
                     </span>
                     <span className="font-semibold">{o.name}</span>
                   </span>
@@ -120,26 +137,39 @@ export function LocationView() {
         </ul>
       )}
 
+      <Sheet open={!!detail} onClose={() => setDetail(null)}>
+        {detail && (
+          <ObjectDetail
+            object={detail}
+            onAdjust={() => {
+              setNewQty(invMap.get(detail.id)?.quantity ?? 0);
+              setAdjusting(detail);
+              setDetail(null);
+            }}
+          />
+        )}
+      </Sheet>
+
       <Sheet
         open={!!adjusting}
         onClose={() => setAdjusting(null)}
-        title={adjusting ? `Ajustar ${adjusting.name}` : ''}
+        title={adjusting ? t.locationView.adjustTitle(adjusting.name) : ''}
       >
         {adjusting && (
           <div className="flex flex-col items-center gap-4">
-            <p className="text-sm text-boat-500">Quantitat real al compartiment:</p>
+            <p className="text-sm text-boat-500">{t.locationView.realQuantity}</p>
             <NumberStepper
               value={newQty}
               onChange={setNewQty}
               min={0}
               step={adjusting.quantityType === 'units' ? 1 : 0.1}
             />
-            <Button onClick={() => void confirmAdjust()}>Desar ajust</Button>
+            <Button onClick={() => void confirmAdjust()}>{t.locationView.saveAdjust}</Button>
           </div>
         )}
       </Sheet>
 
-      <Sheet open={editing} onClose={() => setEditing(false)} title="Editar lloc">
+      <Sheet open={editing} onClose={() => setEditing(false)} title={t.locationView.editLocationTitle}>
         <div className="flex flex-col gap-4">
           <LocationForm
             initial={location}
@@ -147,7 +177,7 @@ export function LocationView() {
             onCancel={() => setEditing(false)}
           />
           <ConfirmDelete
-            message={`Eliminar "${location.name}"? Desapareixerà dels objectes que el tenien com a ubicació habitual.`}
+            message={t.locationView.confirmDelete(location.name)}
             onConfirm={removeLocation}
           />
         </div>

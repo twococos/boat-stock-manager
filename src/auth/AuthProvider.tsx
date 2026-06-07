@@ -13,6 +13,7 @@ import {
   setUserName as persistName,
   clearUserName,
 } from './session';
+import { t } from '@/text';
 
 interface AuthState {
   /** Nom visible del tripulant actual (null si encara no s'ha posat). */
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     const trimmed = name.trim();
     if (!trimmed) {
-      setError('Cal escriure un nom.');
+      setError(t.login.emptyName);
       throw new Error('empty-name');
     }
 
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: boatPassword,
       });
       if (signInError) {
-        setError('Contrasenya del vaixell incorrecta.');
+        setError(t.login.wrongPassword);
         throw signInError;
       }
     }

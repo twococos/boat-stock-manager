@@ -14,6 +14,7 @@ import { Checklists } from './routes/Checklists';
 import { History } from './routes/History';
 import { Expiring } from './routes/Expiring';
 import { Settings } from './routes/Settings';
+import { t } from '@/text';
 
 // HashRouter: funciona en hosting estàtic (Cloudflare/GitHub Pages) sense config de
 // reescriptura de rutes al servidor.
@@ -27,6 +28,7 @@ const router = createHashRouter([
       { path: 'purchase', element: <PurchaseFlow /> },
       { path: 'objects', element: <ObjectsList /> },
       { path: 'objects/recipes', element: <Recipes /> },
+      { path: 'recipes', element: <Recipes /> },
       { path: 'locations', element: <LocationsList /> },
       { path: 'locations/:id', element: <LocationView /> },
       { path: 'checklists', element: <Checklists /> },
@@ -43,7 +45,7 @@ function Gate() {
   if (loading) {
     return (
       <div className="flex min-h-full items-center justify-center bg-boat-50 text-boat-700">
-        Carregant…
+        {t.common.loading}
       </div>
     );
   }

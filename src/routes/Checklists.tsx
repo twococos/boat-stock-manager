@@ -11,8 +11,10 @@ import { db } from '@/db/db';
 import { commitChecklistUpsert, commitChecklistDelete } from '@/db/commands';
 import { toggleItem, resetProgress } from '@/db/repositories/checklistProgress.repo';
 import { useAuth } from '@/auth/AuthProvider';
+import { useEditLocked } from '@/hooks/useEditLocked';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
+import { t } from '@/text';
 
 /**
  * Checklists: les PLANTILLES se sincronitzen; el PROGRÉS és LOCAL i mai se sincronitza.
@@ -20,16 +22,17 @@ import { nowISO } from '@/lib/time';
  */
 export function Checklists() {
   const checklists = useChecklists() ?? [];
+  const editLocked = useEditLocked();
   const [open, setOpen] = useState<ChecklistTemplate | null>(null);
   const [editing, setEditing] = useState<ChecklistTemplate | null>(null);
   const [creating, setCreating] = useState(false);
 
   return (
     <div className="flex flex-col gap-3 pt-2">
-      <h1 className="text-xl font-bold">Checklists</h1>
+      <h1 className="text-xl font-bold">{t.checklists.title}</h1>
 
       {checklists.length === 0 ? (
-        <EmptyState icon={CheckSquare} text="Cap checklist. Crea procediments rutinaris." />
+        <EmptyState icon={CheckSquare} text={t.checklists.empty} />
       ) : (
         <ul className="flex flex-col gap-2">
           {checklists.map((c) => (
@@ -42,30 +45,32 @@ export function Checklists() {
                 className="flex flex-1 items-center justify-between active:scale-[0.98]"
               >
                 <span className="font-semibold">{c.title}</span>
-                <span className="text-xs text-boat-500">{c.items.length} passos</span>
+                <span className="text-xs text-boat-500">{t.checklists.stepsCount(c.items.length)}</span>
               </button>
-              <button
-                onClick={() => setEditing(c)}
-                aria-label="Editar plantilla"
-                className="ml-3 text-boat-600"
-              >
-                <Pencil size={18} />
-              </button>
+              {!editLocked && (
+                <button
+                  onClick={() => setEditing(c)}
+                  aria-label={t.checklists.editTemplateAria}
+                  className="ml-3 text-boat-600"
+                >
+                  <Pencil size={18} />
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
 
-      <Button onClick={() => setCreating(true)}>+ Nova checklist</Button>
+      {!editLocked && <Button onClick={() => setCreating(true)}>{t.checklists.newChecklist}</Button>}
 
-      {open && <RunSheet template={open} onClose={() => setOpen(null)} />}
-      <Sheet open={creating} onClose={() => setCreating(false)} title="Nova checklist">
+      <RunSheet template={open} onClose={() => setOpen(null)} />
+      <Sheet open={creating} onClose={() => setCreating(false)} title={t.checklists.newChecklistTitle}>
         <ChecklistEditor onDone={() => setCreating(false)} />
       </Sheet>
       <Sheet
         open={!!editing}
         onClose={() => setEditing(null)}
-        title="Editar checklist"
+        title={t.checklists.editChecklistTitle}
       >
         {editing && (
           <ChecklistEditor initial={editing} onDone={() => setEditing(null)} />
@@ -80,24 +85,24 @@ function RunSheet({
   template,
   onClose,
 }: {
-  template: ChecklistTemplate;
+  template: ChecklistTemplate | null;
   onClose: () => void;
 }) {
   const progress = useLiveQuery(
-    () => db.checklistProgress.get(template.id),
-    [template.id],
+    () => (template ? db.checklistProgress.get(template.id) : undefined),
+    [template?.id],
   );
   const checked = new Set(progress?.checkedItemIds ?? []);
 
   return (
-    <Sheet open onClose={onClose} title={template.title}>
+    <Sheet open={!!template} onClose={onClose} title={template?.title}>
       <ul className="flex flex-col gap-1">
-        {template.items.map((it) => {
+        {(template?.items ?? []).map((it) => {
           const done = checked.has(it.id);
           return (
             <li key={it.id}>
               <button
-                onClick={() => void toggleItem(template.id, it.id)}
+                onClick={() => template && void toggleItem(template.id, it.id)}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left ${
                   done ? 'bg-green-50 text-boat-400 line-through' : 'bg-boat-50'
                 }`}
@@ -114,8 +119,8 @@ function RunSheet({
         })}
       </ul>
       <div className="mt-3">
-        <Button variant="secondary" onClick={() => void resetProgress(template.id)}>
-          Reiniciar progrés
+        <Button variant="secondary" onClick={() => template && void resetProgress(template.id)}>
+          {t.checklists.resetProgress}
         </Button>
       </div>
     </Sheet>
@@ -163,19 +168,19 @@ function ChecklistEditor({
   const field = 'rounded-xl border border-boat-100 px-4 py-3 w-full';
   return (
     <div className="flex flex-col gap-3">
-      <input className={field} placeholder="Títol (p.ex. Sortir de cala)" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <label className="text-sm font-medium text-boat-700">Passos (un per línia)</label>
+      <input className={field} placeholder={t.checklists.titlePlaceholder} value={title} onChange={(e) => setTitle(e.target.value)} />
+      <label className="text-sm font-medium text-boat-700">{t.checklists.stepsLabel}</label>
       <textarea
         className={field}
         rows={8}
         value={itemsText}
         onChange={(e) => setItemsText(e.target.value)}
-        placeholder={'Aixecar àncora\nRecollir defenses\nEngegar motor'}
+        placeholder={t.checklists.stepsPlaceholder}
       />
-      <Button onClick={() => void save()}>Desar plantilla</Button>
+      <Button onClick={() => void save()}>{t.checklists.saveTemplate}</Button>
       {initial && (
         <ConfirmDelete
-          message={`Eliminar la checklist "${initial.title}"?`}
+          message={t.checklists.confirmDelete(initial.title)}
           onConfirm={remove}
         />
       )}

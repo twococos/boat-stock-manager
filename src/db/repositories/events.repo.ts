@@ -52,3 +52,27 @@ export function stripLocalMeta(row: LocalEvent): AppEvent {
   void _serverSeq;
   return event as AppEvent;
 }
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Purga esdeveniments `*_upsert` el payload dels quals té un id que no és un UUID
+ * vàlid. El trigger de mirall de Supabase casta `payload.id` a uuid, així que un id
+ * no-UUID fa fallar el push i bloqueja TOT el sync indefinidament (l'esdeveniment
+ * dolent es reintenta a cada cicle). Una versió primerenca de la foto de capçalera
+ * de Llocs feia servir un id no-UUID; aquesta neteja única treu aquells esdeveniments
+ * encallats. És idempotent i inofensiva si no n'hi ha cap. Retorna quants n'ha tret.
+ */
+export async function purgeNonUuidUpserts(): Promise<number> {
+  const rows = await db.events.toArray();
+  const bad = rows.filter((r) => {
+    if (!r.type.endsWith('_upsert')) return false;
+    const id = (r as { payload?: { id?: unknown } }).payload?.id;
+    return typeof id === 'string' && !UUID_RE.test(id);
+  });
+  if (bad.length > 0) {
+    await db.events.bulkDelete(bad.map((r) => r.id));
+  }
+  return bad.length;
+}

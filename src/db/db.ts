@@ -22,7 +22,7 @@ export type LocalEvent = AppEvent & {
 export interface PendingPhoto {
   id: string;
   blob: Blob;
-  targetType: 'object' | 'location';
+  targetType: 'object' | 'location' | 'app';
   targetId: string;
   createdAt: string;
 }

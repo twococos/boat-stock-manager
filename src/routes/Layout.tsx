@@ -1,50 +1,61 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { SyncIndicator } from '@/components/ui/SyncIndicator';
 import {
   Home,
   Archive,
   Package,
   CheckSquare,
+  BookOpen,
   Settings,
   Sailboat,
   type LucideIcon,
 } from '@/components/ui/icons';
 import { useAuth } from '@/auth/AuthProvider';
 import { useSync } from '@/sync/SyncProvider';
+import { t } from '@/text';
 
 const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
-  { to: '/', label: 'Inici', icon: Home, end: true },
-  { to: '/locations', label: 'Llocs', icon: Archive },
-  { to: '/objects', label: 'Objectes', icon: Package },
-  { to: '/checklists', label: 'Checklists', icon: CheckSquare },
-  { to: '/settings', label: 'Ajustos', icon: Settings },
+  { to: '/', label: t.nav.home, icon: Home, end: true },
+  { to: '/locations', label: t.nav.locations, icon: Archive },
+  { to: '/objects', label: t.nav.objects, icon: Package },
+  { to: '/recipes', label: t.nav.recipes, icon: BookOpen },
+  { to: '/checklists', label: t.nav.checklists, icon: CheckSquare },
 ];
 
 /** Layout principal: capçalera amb sync + contingut + navegació inferior. */
 export function Layout() {
   const { userName } = useAuth();
   const { online, pendingCount, status } = useSync();
+  const location = useLocation();
+  const navigate = useNavigate();
   const showOfflineBanner =
     status !== 'not-configured' && (!online || status === 'offline');
   return (
     <div className="flex min-h-full flex-col bg-boat-50 text-boat-900">
       <header className="flex items-center justify-between px-4 py-2">
-        <span className="flex items-center gap-1.5 text-sm font-semibold">
+        <button
+          onClick={() => navigate('/settings')}
+          aria-label={t.nav.settingsAria}
+          className="flex items-center gap-1.5 text-sm font-semibold active:scale-95"
+        >
           <Sailboat size={18} className="text-boat-700" />
           {userName}
-        </span>
+          <Settings size={16} className="text-boat-400" />
+        </button>
         <SyncIndicator />
       </header>
 
       {showOfflineBanner && (
         <div className="bg-amber-100 px-4 py-1.5 text-center text-xs text-amber-900">
-          Sense connexió · {pendingCount} canvi{pendingCount === 1 ? '' : 's'} pendent
-          {pendingCount === 1 ? '' : 's'} de sincronitzar
+          {t.nav.offlineBanner(pendingCount)}
         </div>
       )}
 
       <main className="flex-1 overflow-y-auto px-4 pb-24">
-        <Outlet />
+        {/* `key` per ruta → cada navegació refà el fade d'entrada. */}
+        <div key={location.pathname} className="animate-fade-in">
+          <Outlet />
+        </div>
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 flex justify-around border-t border-boat-100 bg-white pb-[env(safe-area-inset-bottom)]">

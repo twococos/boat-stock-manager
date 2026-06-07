@@ -3,11 +3,12 @@ import type { ItemObject } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
-import { Package } from '@/components/ui/icons';
+import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { useInventoryMap } from '@/hooks/useData';
 import { formatQuantity } from '@/lib/format';
 import { commitStockDelta } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
+import { t } from '@/text';
 
 /**
  * Consum ràpid: llista d'objectes; en triar-ne un, s'obre un full per restar quantitat.
@@ -39,7 +40,7 @@ export function QuickConsume({
   }
 
   if (objects.length === 0) {
-    return <EmptyState text={`No hi ha objectes a "${title}".`} />;
+    return <EmptyState text={t.cook.noObjectsIn(title)} />;
   }
 
   return (
@@ -57,8 +58,8 @@ export function QuickConsume({
                 className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center text-2xl">
-                    {o.icon ?? <Package size={22} className="text-boat-500" />}
+                  <span className="flex h-8 w-8 items-center justify-center">
+                    <ObjectIcon icon={o.icon} size={24} />
                   </span>
                   <span className="font-semibold">{o.name}</span>
                 </span>
@@ -76,15 +77,16 @@ export function QuickConsume({
       <Sheet
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected ? `Gastar ${selected.name}` : ''}
+        title={selected ? t.quickConsume.spendTitle(selected.name) : ''}
       >
         {selected && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-sm text-boat-500">
-              En estoc:{' '}
-              {formatQuantity(
-                invMap.get(selected.id)?.quantity ?? 0,
-                selected.quantityType,
+              {t.quickConsume.inStockLabel(
+                formatQuantity(
+                  invMap.get(selected.id)?.quantity ?? 0,
+                  selected.quantityType,
+                ),
               )}
             </p>
             <NumberStepper
@@ -93,7 +95,7 @@ export function QuickConsume({
               min={selected.quantityType === 'units' ? 1 : 0.1}
               step={selected.quantityType === 'units' ? 1 : 0.1}
             />
-            <Button onClick={() => void confirm()}>Confirmar consum</Button>
+            <Button onClick={() => void confirm()}>{t.quickConsume.confirmConsume}</Button>
           </div>
         )}
       </Sheet>

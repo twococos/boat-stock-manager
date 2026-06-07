@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/db';
-import type { ID, InventoryEntry, ItemObject } from '@/types/entities';
+import type { ID, InventoryEntry, ItemObject, StowageLocation } from '@/types/entities';
+import { HEADER_LOCATION_ID } from '@/features/locations/headerLocation';
 
 /**
  * Hooks de lectura reactius sobre les caus de Dexie.
@@ -11,7 +12,22 @@ import type { ID, InventoryEntry, ItemObject } from '@/types/entities';
  */
 
 export const useObjects = () => useLiveQuery(() => db.objects.toArray(), [], []);
-export const useLocations = () => useLiveQuery(() => db.locations.toArray(), [], []);
+
+/**
+ * Llocs d'estiva visibles. Exclou el "lloc" reservat que només transporta la foto
+ * de capçalera sincronitzada (veure features/locations/headerLocation), perquè cap
+ * consumidor (llistes, selectors, vista de compartiment) el tracti com un real.
+ */
+export const useLocations = () =>
+  useLiveQuery(
+    () => db.locations.where('id').notEqual(HEADER_LOCATION_ID).toArray(),
+    [],
+    [],
+  );
+
+/** Lloc reservat que porta la foto de capçalera de la pàgina de Llocs (o undefined). */
+export const useHeaderLocation = (): StowageLocation | undefined =>
+  useLiveQuery(() => db.locations.get(HEADER_LOCATION_ID), []);
 export const useRecipes = () => useLiveQuery(() => db.recipes.toArray(), [], []);
 export const useChecklists = () =>
   useLiveQuery(() => db.checklistTemplates.toArray(), [], []);

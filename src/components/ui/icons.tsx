@@ -31,6 +31,7 @@ import {
   Inbox,
   Trash2,
   Pencil,
+  Minus,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ export {
   Inbox,
   Trash2,
   Pencil,
+  Minus,
   X,
 };
 export type { LucideIcon };

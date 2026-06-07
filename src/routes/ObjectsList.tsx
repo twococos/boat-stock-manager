@@ -4,13 +4,17 @@ import type { ItemObject } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/common';
+import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { Package } from '@/components/ui/icons';
 import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { ObjectForm } from '@/features/objects/ObjectForm';
+import { ObjectDetail } from '@/features/objects/ObjectDetail';
 import { useObjects, useInventoryMap } from '@/hooks/useData';
 import { commitObjectUpsert, commitObjectDelete } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
+import { useEditLocked } from '@/hooks/useEditLocked';
 import { formatQuantity } from '@/lib/format';
+import { t } from '@/text';
 
 /** Catàleg d'objectes amb cerca i creació/edició. PLA.md secció 12.5. */
 export function ObjectsList() {
@@ -18,7 +22,9 @@ export function ObjectsList() {
   const navigate = useNavigate();
   const objects = useObjects() ?? [];
   const invMap = useInventoryMap();
+  const editLocked = useEditLocked();
   const [query, setQuery] = useState('');
+  const [detail, setDetail] = useState<ItemObject | null>(null);
   const [editing, setEditing] = useState<ItemObject | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -43,12 +49,12 @@ export function ObjectsList() {
   return (
     <div className="flex flex-col gap-3 pt-2">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Objectes</h1>
+        <h1 className="text-xl font-bold">{t.objects.title}</h1>
         <button
           onClick={() => navigate('/objects/recipes')}
           className="text-sm text-boat-600"
         >
-          Receptes →
+          {t.objects.toRecipes}
         </button>
       </div>
 
@@ -56,28 +62,28 @@ export function ObjectsList() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Cercar…"
+        placeholder={t.common.search}
         className="rounded-xl border border-boat-100 px-4 py-3"
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Package} text="Cap objecte. Crea'n un amb el botó de sota." />
+        <EmptyState icon={Package} text={t.objects.empty} />
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((o) => (
             <li key={o.id}>
               <button
-                onClick={() => setEditing(o)}
+                onClick={() => setDetail(o)}
                 className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center text-2xl">
-                    {o.icon ?? <Package size={22} className="text-boat-500" />}
+                  <span className="flex h-8 w-8 items-center justify-center">
+                    <ObjectIcon icon={o.icon} size={24} />
                   </span>
                   <span className="text-left">
                     <span className="block font-semibold">{o.name}</span>
                     <span className="block text-xs text-boat-500">
-                      {o.stockType}
+                      {t.object.stockType[o.stockType]}
                     </span>
                   </span>
                 </span>
@@ -90,17 +96,34 @@ export function ObjectsList() {
         </ul>
       )}
 
-      <Button onClick={() => setCreating(true)}>+ Nou objecte</Button>
+      {!editLocked && <Button onClick={() => setCreating(true)}>{t.objects.newObject}</Button>}
 
-      <Sheet open={creating} onClose={() => setCreating(false)} title="Nou objecte">
+      {/* Detall de l'objecte */}
+      <Sheet open={!!detail} onClose={() => setDetail(null)}>
+        {detail && (
+          <ObjectDetail
+            object={detail}
+            onEdit={
+              editLocked
+                ? undefined
+                : () => {
+                    setEditing(detail);
+                    setDetail(null);
+                  }
+            }
+          />
+        )}
+      </Sheet>
+
+      <Sheet open={creating} onClose={() => setCreating(false)} title={t.objects.newObjectTitle}>
         <ObjectForm onSave={save} onCancel={() => setCreating(false)} />
       </Sheet>
-      <Sheet open={!!editing} onClose={() => setEditing(null)} title="Editar objecte">
+      <Sheet open={!!editing} onClose={() => setEditing(null)} title={t.objects.editObjectTitle}>
         {editing && (
           <div className="flex flex-col gap-4">
             <ObjectForm initial={editing} onSave={save} onCancel={() => setEditing(null)} />
             <ConfirmDelete
-              message={`Eliminar "${editing.name}"? Es traurà també de les receptes on figuri com a ingredient.`}
+              message={t.objects.confirmDelete(editing.name)}
               onConfirm={() => remove(editing.id)}
             />
           </div>

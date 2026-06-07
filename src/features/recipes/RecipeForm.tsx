@@ -5,6 +5,7 @@ import { X, Flame } from '@/components/ui/icons';
 import { useObjects } from '@/hooks/useData';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
+import { t } from '@/text';
 
 /** Editor de receptes: títol, ingredients per persona, temps, foc, passos. PLA.md 12.5. */
 export function RecipeForm({
@@ -55,19 +56,18 @@ export function RecipeForm({
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm text-boat-600">
-          Cal crear objectes abans de fer una recepta (un ingredient ha d'existir
-          primer).
+          {t.recipeForm.needObjectsFirst}
         </p>
-        <Button variant="secondary" onClick={onCancel}>Tancar</Button>
+        <Button variant="secondary" onClick={onCancel}>{t.recipeForm.close}</Button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <input className={field} placeholder="Títol" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <input className={field} placeholder={t.recipeForm.titlePlaceholder} value={title} onChange={(e) => setTitle(e.target.value)} />
 
-      <label className="text-sm font-medium text-boat-700">Ingredients (per persona)</label>
+      <label className="text-sm font-medium text-boat-700">{t.recipeForm.ingredientsPerPerson}</label>
       {ingredients.map((ing, idx) => (
         <div key={idx} className="flex items-center gap-2">
           <select
@@ -99,7 +99,7 @@ export function RecipeForm({
           <button
             type="button"
             onClick={() => setIngredients((p) => p.filter((_, i) => i !== idx))}
-            aria-label="Treure ingredient"
+            aria-label={t.recipeForm.removeIngredientAria}
             className="text-red-500"
           >
             <X size={20} />
@@ -107,10 +107,10 @@ export function RecipeForm({
         </div>
       ))}
       <button type="button" onClick={addIngredient} className="self-start text-sm text-boat-600">
-        + Afegir ingredient
+        {t.recipeForm.addIngredient}
       </button>
 
-      <label className="text-sm font-medium text-boat-700">Temps (min, opcional)</label>
+      <label className="text-sm font-medium text-boat-700">{t.recipeForm.prepTime}</label>
       <input
         type="number"
         className={field}
@@ -121,11 +121,11 @@ export function RecipeForm({
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={needsCooking} onChange={(e) => setNeedsCooking(e.target.checked)} />
         <span className="flex items-center gap-1">
-          Cal foc <Flame size={16} className="text-red-500" />
+          {t.recipeForm.needsCooking} <Flame size={16} className="text-red-500" />
         </span>
       </label>
 
-      <label className="text-sm font-medium text-boat-700">Passos (un per línia, opcional)</label>
+      <label className="text-sm font-medium text-boat-700">{t.recipeForm.steps}</label>
       <textarea
         className={field}
         rows={4}
@@ -134,8 +134,8 @@ export function RecipeForm({
       />
 
       <div className="mt-2 flex gap-2">
-        <Button variant="secondary" onClick={onCancel}>Cancel·lar</Button>
-        <Button onClick={submit}>Desar</Button>
+        <Button variant="secondary" onClick={onCancel}>{t.common.cancel}</Button>
+        <Button onClick={submit}>{t.common.save}</Button>
       </div>
     </div>
   );

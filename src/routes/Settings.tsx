@@ -4,10 +4,18 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/common';
 import { useAuth } from '@/auth/AuthProvider';
 import { useSync } from '@/sync/SyncProvider';
-import { getDefaultDiners, setDefaultDiners } from '@/auth/session';
+import {
+  getDefaultDiners,
+  setDefaultDiners,
+  setEditLocked,
+  getDurationWindowDays,
+  setDurationWindowDays,
+} from '@/auth/session';
+import { useEditLocked } from '@/hooks/useEditLocked';
 import { downloadBackup, importBackup } from '@/db/backup';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { relativeFromNow } from '@/lib/time';
+import { t } from '@/text';
 
 /** Ajustos: nom, comensals, sync, backup, instal·lació, sessió. */
 export function Settings() {
@@ -16,6 +24,8 @@ export function Settings() {
   const navigate = useNavigate();
   const [name, setNameField] = useState(userName ?? '');
   const [diners, setDiners] = useState(getDefaultDiners());
+  const [durationWindow, setDurationWindow] = useState(getDurationWindowDays());
+  const editLocked = useEditLocked();
   const { canInstall, promptInstall, isIOS } = useInstallPrompt();
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
@@ -24,30 +34,30 @@ export function Settings() {
     if (!file) return;
     try {
       const added = await importBackup(await file.text());
-      setImportMsg(`${added} esdeveniments importats.`);
+      setImportMsg(t.settings.importedEvents(added));
     } catch {
-      setImportMsg('Error en importar el fitxer.');
+      setImportMsg(t.settings.importError);
     }
   }
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <h1 className="text-xl font-bold">Ajustos</h1>
+      <h1 className="text-xl font-bold">{t.settings.title}</h1>
 
       <Card className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-boat-700">El teu nom</label>
+        <label className="text-sm font-medium text-boat-700">{t.settings.yourName}</label>
         <div className="flex gap-2">
           <input
             className="flex-1 rounded-xl border border-boat-100 px-4 py-3"
             value={name}
             onChange={(e) => setNameField(e.target.value)}
           />
-          <Button onClick={() => setName(name)} className="w-auto px-4">Desar</Button>
+          <Button onClick={() => setName(name)} className="w-auto px-4">{t.common.save}</Button>
         </div>
       </Card>
 
       <Card className="flex items-center justify-between">
-        <label className="text-sm font-medium text-boat-700">Comensals per defecte</label>
+        <label className="text-sm font-medium text-boat-700">{t.settings.defaultDiners}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -63,32 +73,76 @@ export function Settings() {
         </div>
       </Card>
 
+      <Card className="flex items-center justify-between gap-3">
+        <label className="text-sm font-medium text-boat-700">
+          {t.settings.durationWindowLabel}
+          <span className="block text-xs font-normal text-boat-500">
+            {t.settings.durationWindowHint}
+          </span>
+        </label>
+        <input
+          type="number"
+          min={1}
+          className="w-20 flex-shrink-0 rounded-xl border border-boat-100 px-3 py-2"
+          value={durationWindow}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10) || 1;
+            setDurationWindow(n);
+            setDurationWindowDays(n);
+          }}
+        />
+      </Card>
+
+      <Card className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setEditLocked(!editLocked)}
+          className="flex items-center justify-between gap-3 text-left"
+        >
+          <span className="flex flex-col">
+            <span className="text-sm font-medium text-boat-700">{t.settings.lockEdit}</span>
+            <span className="text-xs text-boat-500">{t.settings.lockEditHint}</span>
+          </span>
+          <span
+            className={`relative h-7 w-12 flex-shrink-0 rounded-full transition-colors ${
+              editLocked ? 'bg-boat-700' : 'bg-boat-100'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                editLocked ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </span>
+        </button>
+      </Card>
+
       <Card className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-boat-700">Sincronització</span>
+          <span className="text-sm font-medium text-boat-700">{t.settings.sync}</span>
           <span className="text-xs text-boat-500">
             {status === 'not-configured'
-              ? 'Mode local'
+              ? t.settings.localMode
               : lastSyncedAt
-                ? `Última: ${relativeFromNow(lastSyncedAt)}`
-                : 'Sense sincronitzar'}
+                ? t.settings.lastSync(relativeFromNow(lastSyncedAt))
+                : t.settings.neverSynced}
           </span>
         </div>
         {pendingCount > 0 && (
-          <span className="text-xs text-amber-700">{pendingCount} canvis pendents</span>
+          <span className="text-xs text-amber-700">{t.settings.pendingChanges(pendingCount)}</span>
         )}
         <Button variant="secondary" onClick={() => void syncNow()}>
-          Sincronitzar ara
+          {t.settings.syncNow}
         </Button>
       </Card>
 
       <Card className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-boat-700">Còpia de seguretat</span>
+        <span className="text-sm font-medium text-boat-700">{t.settings.backup}</span>
         <Button variant="secondary" onClick={() => void downloadBackup()}>
-          Exportar (JSON)
+          {t.settings.exportJson}
         </Button>
         <label className="btn-touch w-full cursor-pointer bg-boat-100 text-boat-900">
-          Importar (JSON)
+          {t.settings.importJson}
           <input type="file" accept="application/json" className="hidden" onChange={onImport} />
         </label>
         {importMsg && <p className="text-xs text-boat-600">{importMsg}</p>}
@@ -96,24 +150,21 @@ export function Settings() {
 
       {(canInstall || isIOS) && (
         <Card className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-boat-700">Instal·lar l'app</span>
+          <span className="text-sm font-medium text-boat-700">{t.settings.installApp}</span>
           {canInstall ? (
-            <Button onClick={() => void promptInstall()}>Instal·lar en aquest dispositiu</Button>
+            <Button onClick={() => void promptInstall()}>{t.settings.installOnDevice}</Button>
           ) : (
-            <p className="text-xs text-boat-600">
-              A iPhone: toca el botó de Compartir de Safari i tria «Afegir a la pantalla
-              d'inici».
-            </p>
+            <p className="text-xs text-boat-600">{t.settings.installIosHint}</p>
           )}
         </Card>
       )}
 
       <Card className="flex flex-col gap-2">
         <Button variant="secondary" onClick={() => navigate('/history')}>
-          Veure historial
+          {t.settings.viewHistory}
         </Button>
         <Button variant="danger" onClick={() => void signOut()}>
-          Tancar sessió
+          {t.settings.signOut}
         </Button>
       </Card>
     </div>

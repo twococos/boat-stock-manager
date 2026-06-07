@@ -57,7 +57,8 @@ export interface ItemObject {
   usualLocationIds: ID[]; // només informatiu — l'estoc NO és per lloc
   foodCategory?: FoodCategory; // només menjar
   expiry?: ExpiryPolicy; // només menjar
-  trackDuration?: boolean; // opt-in estimació de durada (aigua, gas, cafè…)
+  trackDuration?: boolean; // opt-in estimació de durada (gas, cafè…)
+  capacityLiters?: number; // només aigua: litres per unitat (ampolla) — per estimar durada
   createdAt: ISOTimestamp;
   updatedAt: ISOTimestamp;
 }

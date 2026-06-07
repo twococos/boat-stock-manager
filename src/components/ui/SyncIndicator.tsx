@@ -1,5 +1,6 @@
 import { useSync } from '@/sync/SyncProvider';
 import { relativeFromNow } from '@/lib/time';
+import { t } from '@/text';
 
 /**
  * Indicador de sincronització: mostra l'estat, l'hora de l'última sync i els canvis
@@ -13,25 +14,25 @@ export function SyncIndicator() {
   let dot: string;
   switch (status) {
     case 'syncing':
-      label = 'Sincronitzant…';
+      label = t.sync.syncing;
       dot = 'bg-amber-400';
       break;
     case 'offline':
-      label = 'Sense connexió';
+      label = t.sync.offline;
       dot = 'bg-gray-400';
       break;
     case 'error':
-      label = 'Error de sync';
+      label = t.sync.error;
       dot = 'bg-red-500';
       break;
     case 'not-configured':
-      label = 'Mode local';
+      label = t.sync.localMode;
       dot = 'bg-gray-300';
       break;
     default:
       label = lastSyncedAt
-        ? `Sincronitzat ${relativeFromNow(lastSyncedAt)}`
-        : 'Sense sincronitzar';
+        ? t.sync.syncedRel(relativeFromNow(lastSyncedAt))
+        : t.sync.neverSynced;
       dot = online ? 'bg-green-500' : 'bg-gray-400';
   }
 
@@ -39,7 +40,7 @@ export function SyncIndicator() {
     <button
       onClick={() => void syncNow()}
       className="flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs text-boat-700 shadow-sm active:scale-95"
-      title="Toca per sincronitzar ara"
+      title={t.sync.syncNowAria}
     >
       <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
       <span>{label}</span>

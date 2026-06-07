@@ -172,6 +172,13 @@ supabase/        migrations/0001..0005 + README (instruccions de posada en marxa
   UI o les comandes. Afegeix tests si toca estoc/receptes/lots.
 - **Components UI:** reutilitza `Button`, `Sheet`, `EmptyState`, `NumberStepper`,
   `TileButton`, `Card` abans de crear-ne de nous. Botons grans (classe `btn-touch`).
+- **Text d'UI:** TOT el text visible viu a [src/text/ca.ts](src/text/ca.ts) (objecte niat
+  `ca`). Als components: `import { t } from '@/text'` i usa `t.secció.clau` (accés niat,
+  tipat). Text fix → string; amb variables/plural → funció `t.secció.clau(arg)`; etiquetes
+  d'enums → mapes (`t.object.stockType[…]`). **No posis literals de text a la JSX** (ni
+  `placeholder`/`aria-label`/`alt`): afegeix-los a `ca.ts`. Per a un altre idioma: duplica
+  `ca.ts` i registra el diccionari a [src/text/index.ts](src/text/index.ts) (el tipus
+  `Dict` força que tots els idiomes tinguin les mateixes claus).
 
 ---
 

@@ -3,6 +3,7 @@ import { useAuth } from './AuthProvider';
 import { isSupabaseConfigured } from '@/sync/supabase';
 import { Button } from '@/components/ui/Button';
 import { Sailboat } from '@/components/ui/icons';
+import { t } from '@/text';
 
 /**
  * Pantalla de login: nom lliure + contrasenya del vaixell.
@@ -31,25 +32,25 @@ export function LoginScreen() {
   return (
     <div className="min-h-full bg-boat-50 text-boat-900 flex flex-col items-center justify-center gap-6 p-6">
       <Sailboat size={64} className="text-boat-700" />
-      <h1 className="text-2xl font-bold">Boat Stock Manager</h1>
+      <h1 className="text-2xl font-bold">{t.appName}</h1>
 
       <form onSubmit={onSubmit} className="w-full max-w-xs flex flex-col gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-boat-700">El teu nom</span>
+          <span className="text-sm font-medium text-boat-700">{t.login.yourName}</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
             className="rounded-xl border border-boat-100 px-4 py-3 text-lg"
-            placeholder="p.ex. Aimar"
+            placeholder={t.login.namePlaceholder}
             required
           />
         </label>
 
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-boat-700">
-            Contrasenya del vaixell
+            {t.login.boatPassword}
           </span>
           <input
             type="password"
@@ -57,21 +58,24 @@ export function LoginScreen() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             className="rounded-xl border border-boat-100 px-4 py-3 text-lg"
-            placeholder={isSupabaseConfigured ? '••••••' : '(no cal en mode local)'}
+            placeholder={
+              isSupabaseConfigured
+                ? t.login.passwordPlaceholderConfigured
+                : t.login.passwordPlaceholderLocal
+            }
           />
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit" disabled={busy}>
-          {busy ? 'Entrant…' : 'Entrar'}
+          {busy ? t.login.entering : t.login.enter}
         </Button>
       </form>
 
       {!isSupabaseConfigured && (
         <p className="text-xs text-boat-500 max-w-xs text-center">
-          Mode local: encara no s'ha configurat el núvol. Pots treballar offline; la
-          sincronització s'activarà quan es configuri Supabase.
+          {t.login.localModeHint}
         </p>
       )}
     </div>

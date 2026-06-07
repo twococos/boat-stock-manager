@@ -5,11 +5,13 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState, TileButton } from '@/components/ui/common';
 import { Package, BookOpen } from '@/components/ui/icons';
+import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { useObjects, useRecipes, useObjectsMap } from '@/hooks/useData';
 import { recipeToPurchaseLines } from '@/domain/recipes/scaling';
 import { commitStockDelta } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { getDefaultDiners } from '@/auth/session';
+import { t } from '@/text';
 
 type Mode = 'menu' | 'object' | 'recipe';
 
@@ -75,19 +77,19 @@ export function PurchaseFlow() {
     return (
       <div className="flex flex-col gap-4 pt-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Mode compra</h1>
+          <h1 className="text-xl font-bold">{t.purchase.title}</h1>
           {addedCount > 0 && (
             <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-800">
-              {addedCount} afegits
+              {t.purchase.addedCount(addedCount)}
             </span>
           )}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <TileButton icon={Package} label="Ingredient" onClick={() => setMode('object')} className="bg-boat-500 text-white" />
-          <TileButton icon={BookOpen} label="Recepta" onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
+          <TileButton icon={Package} label={t.purchase.ingredient} onClick={() => setMode('object')} className="bg-boat-500 text-white" />
+          <TileButton icon={BookOpen} label={t.purchase.recipe} onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
         </div>
         <Button variant="secondary" onClick={() => navigate('/')}>
-          Acabar compra
+          {t.purchase.finish}
         </Button>
       </div>
     );
@@ -96,21 +98,21 @@ export function PurchaseFlow() {
   return (
     <div className="flex flex-col gap-3 pt-2">
       <button onClick={() => setMode('menu')} className="self-start text-sm text-boat-600">
-        ← Menú compra
+        {t.purchase.backToMenu}
       </button>
 
       {mode === 'object' ? (
         <>
-          <h1 className="text-xl font-bold">Afegir ingredient</h1>
+          <h1 className="text-xl font-bold">{t.purchase.addIngredient}</h1>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cercar…"
+            placeholder={t.common.search}
             className="rounded-xl border border-boat-100 px-4 py-3"
           />
           {filtered.length === 0 ? (
-            <EmptyState text="Cap objecte. Crea'n a la pestanya Objectes." />
+            <EmptyState text={t.purchase.noObjects} />
           ) : (
             <ul className="flex flex-col gap-2">
               {filtered.map((o) => (
@@ -122,8 +124,8 @@ export function PurchaseFlow() {
                     }}
                     className="flex w-full items-center gap-2 rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center text-2xl">
-                      {o.icon ?? <Package size={22} className="text-boat-500" />}
+                    <span className="flex h-8 w-8 items-center justify-center">
+                      <ObjectIcon icon={o.icon} size={24} />
                     </span>
                     <span className="font-semibold">{o.name}</span>
                   </button>
@@ -134,9 +136,9 @@ export function PurchaseFlow() {
         </>
       ) : (
         <>
-          <h1 className="text-xl font-bold">Afegir recepta</h1>
+          <h1 className="text-xl font-bold">{t.purchase.addRecipe}</h1>
           {recipes.length === 0 ? (
-            <EmptyState icon={BookOpen} text="Cap recepta." />
+            <EmptyState icon={BookOpen} text={t.purchase.noRecipes} />
           ) : (
             <ul className="flex flex-col gap-2">
               {recipes.map((r) => (
@@ -149,7 +151,7 @@ export function PurchaseFlow() {
                     className="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
                   >
                     <span className="font-semibold">{r.title}</span>
-                    <span className="text-xs text-boat-500">{r.ingredients.length} ingr.</span>
+                    <span className="text-xs text-boat-500">{t.purchase.ingredientsCount(r.ingredients.length)}</span>
                   </button>
                 </li>
               ))}
@@ -159,7 +161,7 @@ export function PurchaseFlow() {
       )}
 
       {/* Full afegir objecte */}
-      <Sheet open={!!obj} onClose={() => setObj(null)} title={obj ? `Afegir ${obj.name}` : ''}>
+      <Sheet open={!!obj} onClose={() => setObj(null)} title={obj ? t.purchase.addObjectTitle(obj.name) : ''}>
         {obj && (
           <div className="flex flex-col items-center gap-4">
             <NumberStepper
@@ -170,7 +172,7 @@ export function PurchaseFlow() {
             />
             {needsExpiryInput && (
               <label className="flex w-full flex-col gap-1 text-sm">
-                Data de caducitat
+                {t.purchase.expiryDate}
                 <input
                   type="date"
                   value={expiresAt}
@@ -179,7 +181,7 @@ export function PurchaseFlow() {
                 />
               </label>
             )}
-            <Button onClick={() => void addObject()}>Afegir a l'estoc</Button>
+            <Button onClick={() => void addObject()}>{t.purchase.addToStock}</Button>
           </div>
         )}
       </Sheet>
@@ -188,9 +190,9 @@ export function PurchaseFlow() {
       <Sheet open={!!recipe} onClose={() => setRecipe(null)} title={recipe?.title}>
         {recipe && (
           <div className="flex flex-col items-center gap-4">
-            <span className="text-sm text-boat-500">Per a quantes persones?</span>
+            <span className="text-sm text-boat-500">{t.purchase.howManyPeople}</span>
             <NumberStepper value={diners} onChange={setDiners} min={1} />
-            <Button onClick={() => void addRecipe()}>Afegir ingredients</Button>
+            <Button onClick={() => void addRecipe()}>{t.purchase.addIngredients}</Button>
           </div>
         )}
       </Sheet>

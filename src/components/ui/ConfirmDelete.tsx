@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from './Button';
 import { Trash2 } from './icons';
+import { t } from '@/text';
 
 /**
  * Botó d'eliminar amb confirmació en dos passos (evita esborrats accidentals amb mans
@@ -8,7 +9,7 @@ import { Trash2 } from './icons';
  * segon executa `onConfirm`.
  */
 export function ConfirmDelete({
-  label = 'Eliminar',
+  label = t.confirmDelete.label,
   message,
   onConfirm,
 }: {
@@ -34,10 +35,10 @@ export function ConfirmDelete({
       <p className="text-sm text-red-700">{message}</p>
       <div className="flex gap-2">
         <Button variant="secondary" onClick={() => setArmed(false)}>
-          Cancel·lar
+          {t.common.cancel}
         </Button>
         <Button variant="danger" onClick={() => void onConfirm()}>
-          Sí, eliminar
+          {t.confirmDelete.confirm}
         </Button>
       </div>
     </div>

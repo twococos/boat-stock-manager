@@ -6,6 +6,7 @@ import {
   markSynced,
   upsertRemoteEvents,
   stripLocalMeta,
+  purgeNonUuidUpserts,
 } from '@/db/repositories/events.repo';
 import { getMeta, putMeta } from '@/db/repositories/meta.repo';
 import { recomputeAll } from '@/db/recompute';
@@ -59,6 +60,12 @@ async function runSync(): Promise<SyncResult> {
   try {
     const meta = await getMeta();
 
+    // ── 0. NETEJA ────────────────────────────────────────────────────────────
+    // Treu esdeveniments *_upsert amb id de payload no-UUID que el trigger de
+    // Supabase rebutjaria, bloquejant el push. Idempotent (no fa res si no n'hi ha).
+    const purged = await purgeNonUuidUpserts();
+    if (purged > 0) await recomputeAll();
+
     // ── 1. PUSH ──────────────────────────────────────────────────────────────
     const pending = await getPendingEvents();
     let pushed = 0;
@@ -106,6 +113,8 @@ async function runSync(): Promise<SyncResult> {
       lastSyncedAt: meta.lastSyncedAt,
     };
   } catch (error) {
+    // Log temporal per diagnosticar errors de sync (mira la consola del navegador).
+    console.error('[sync] error:', error);
     return { ok: false, reason: 'error', error };
   }
 }

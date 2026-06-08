@@ -35,7 +35,12 @@ export type EventType =
   | 'water_measure' // lectura del comptador d'aigua + tanc actiu del tram
   | 'water_refill' // omplir un tanc (PLE / litres)
   | 'gas_measure' // pes actual de la bombona
-  | 'gas_swap'; // canvi de bombona (reset a plena)
+  | 'gas_swap' // canvi de bombona (reset a plena)
+  // ── avaries ──
+  | 'fault_report' // reportar (crear) una avaria
+  | 'fault_update' // actualització follow-up lligada a una avaria
+  | 'fault_resolve' // solucionar una avaria
+  | 'fault_barrier'; // reset de l'historial d'avaries (anàleg a stock_barrier 'reset')
 
 /** Sobre comú a TOTS els esdeveniments (fila append-only del log). */
 export interface EventBase {
@@ -185,6 +190,47 @@ export interface GasSwapEvent extends EventBase {
   type: 'gas_swap';
 }
 
+// ── avaries ──────────────────────────────────────────────────────────────────
+// Una avaria NO és una entitat amb estat guardat: el seu estat (activa/solucionada,
+// descripció, updates) es DERIVA del log com tota la resta. El `faultId` és l'id del
+// propi `fault_report`; els updates i el resolve hi referencien. Veure src/domain/faults/.
+
+/** Gravetat d'una avaria (banda de color de la targeta). */
+export type FaultSeverity = 'yellow' | 'orange' | 'red';
+
+/** Reportar (crear) una avaria. La data/hora és `occurredAt`; l'autor, `userName`. */
+export interface FaultReportEvent extends EventBase {
+  type: 'fault_report';
+  faultId: ID; // = id lògic de l'avaria (per conveni, igual a l'id de l'event)
+  title: string;
+  description: string;
+  severity: FaultSeverity;
+}
+
+/** Actualització follow-up lligada a una avaria (registra data/hora i autor). */
+export interface FaultUpdateEvent extends EventBase {
+  type: 'fault_update';
+  faultId: ID;
+  text: string;
+}
+
+/** Solucionar una avaria (definitiu: surt de la llista d'actives). */
+export interface FaultResolveEvent extends EventBase {
+  type: 'fault_resolve';
+  faultId: ID;
+}
+
+/**
+ * Reset de l'historial d'avaries. Anàleg a StockBarrierEvent mode 'reset': fa que la
+ * derivació IGNORI tots els events fault_* amb clau d'ordre < cut. No hi ha mode 'rewind'
+ * per a avaries. La barrera es conserva com a salvaguarda determinista (multi-dispositiu
+ * offline); a més es fa neteja física (local + RPC). Veure derive de faults i commands.
+ */
+export interface FaultBarrierEvent extends EventBase {
+  type: 'fault_barrier';
+  cut: OrderKey; // s'ignoren els fault_* amb clau < cut (tot el passat)
+}
+
 // ── unió discriminada ────────────────────────────────────────────────────────
 export type AppEvent =
   | StockDeltaEvent
@@ -202,4 +248,8 @@ export type AppEvent =
   | WaterMeasureEvent
   | WaterRefillEvent
   | GasMeasureEvent
-  | GasSwapEvent;
+  | GasSwapEvent
+  | FaultReportEvent
+  | FaultUpdateEvent
+  | FaultResolveEvent
+  | FaultBarrierEvent;

@@ -79,6 +79,34 @@ export async function purgeBeforeBarrier(
   return toDelete.length;
 }
 
+/**
+ * Neteja física després d'un reset d'avaries: esborra localment els events fault_*
+ * (`fault_report`/`fault_update`/`fault_resolve`) anteriors al tall (clau < cut) i totes les
+ * `fault_barrier` EXCEPTE la d'id `keepBarrierId` (la barrera de reset nova, salvaguarda
+ * determinista). Mirall de `purgeBeforeBarrier` per a l'estoc. Retorna quants n'ha tret.
+ */
+export async function purgeFaultsBeforeBarrier(
+  cut: OrderKey,
+  keepBarrierId: string,
+): Promise<number> {
+  const rows = await db.events.toArray();
+  const toDelete = rows.filter((r) => {
+    if (r.type === 'fault_barrier') return r.id !== keepBarrierId;
+    if (
+      r.type === 'fault_report' ||
+      r.type === 'fault_update' ||
+      r.type === 'fault_resolve'
+    ) {
+      return compareKey(keyOf(r), cut) < 0;
+    }
+    return false;
+  });
+  if (toDelete.length > 0) {
+    await db.events.bulkDelete(toDelete.map((r) => r.id));
+  }
+  return toDelete.length;
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

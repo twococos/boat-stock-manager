@@ -10,8 +10,13 @@ import {
   setEditLocked,
   getDurationWindowDays,
   setDurationWindowDays,
+  setShowFaultsButton,
+  setShowDurationSection,
+  setShowResourcesSection,
+  setShowExpiringSection,
 } from '@/auth/session';
 import { useEditLocked } from '@/hooks/useEditLocked';
+import { useDashboardPrefs } from '@/hooks/useDashboardPrefs';
 import { downloadBackup, importBackup } from '@/db/backup';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { relativeFromNow } from '@/lib/time';
@@ -26,6 +31,7 @@ export function Settings() {
   const [diners, setDiners] = useState(getDefaultDiners());
   const [durationWindow, setDurationWindow] = useState(getDurationWindowDays());
   const editLocked = useEditLocked();
+  const dashboardPrefs = useDashboardPrefs();
   const { canInstall, promptInstall, isIOS } = useInstallPrompt();
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
@@ -117,6 +123,37 @@ export function Settings() {
         </button>
       </Card>
 
+      <Card className="flex flex-col gap-3">
+        <div>
+          <span className="text-sm font-medium text-boat-700">{t.settings.dashboard}</span>
+          <span className="block text-xs text-boat-500">{t.settings.dashboardHint}</span>
+        </div>
+        <Toggle
+          label={t.settings.showFaultsButton}
+          hint={t.settings.showFaultsButtonHint}
+          checked={dashboardPrefs.showFaultsButton}
+          onChange={setShowFaultsButton}
+        />
+        <Toggle
+          label={t.settings.showDurationSection}
+          hint={t.settings.showDurationSectionHint}
+          checked={dashboardPrefs.showDurationSection}
+          onChange={setShowDurationSection}
+        />
+        <Toggle
+          label={t.settings.showResourcesSection}
+          hint={t.settings.showResourcesSectionHint}
+          checked={dashboardPrefs.showResourcesSection}
+          onChange={setShowResourcesSection}
+        />
+        <Toggle
+          label={t.settings.showExpiringSection}
+          hint={t.settings.showExpiringSectionHint}
+          checked={dashboardPrefs.showExpiringSection}
+          onChange={setShowExpiringSection}
+        />
+      </Card>
+
       <Card className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-boat-700">{t.settings.sync}</span>
@@ -168,5 +205,42 @@ export function Settings() {
         </Button>
       </Card>
     </div>
+  );
+}
+
+/** Interruptor reutilitzable (mateix estil que el de "bloquejar edició"). */
+function Toggle({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex items-center justify-between gap-3 text-left"
+    >
+      <span className="flex flex-col">
+        <span className="text-sm font-medium text-boat-700">{label}</span>
+        {hint && <span className="text-xs text-boat-500">{hint}</span>}
+      </span>
+      <span
+        className={`relative h-7 w-12 flex-shrink-0 rounded-full transition-colors ${
+          checked ? 'bg-boat-700' : 'bg-boat-100'
+        }`}
+      >
+        <span
+          className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </span>
+    </button>
   );
 }

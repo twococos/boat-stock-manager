@@ -207,6 +207,27 @@ aplicades (0001..0007)**. La sincronització de punta a punta funciona; per conn
 fins aquí"; botó "Esborrar tot l'historial" al final. Confirmació en dos passos amb
 [src/components/ui/ConfirmAction.tsx](src/components/ui/ConfirmAction.tsx).
 
+**Avaries (gestió d'avaries del vaixell)** — event sourcing pur, com tota la resta.
+Events a [src/types/events.ts](src/types/events.ts): `fault_report` (títol, descripció,
+`severity` groc/taronja/vermell; el `faultId` és l'id del propi report), `fault_update`
+(follow-up lligat a `faultId`), `fault_resolve` (solucionar = definitiu, surt de la llista)
+i `fault_barrier` (reset de l'historial, anàleg a `stock_barrier` mode 'reset' — només
+barrera, sense rewind). L'estat es deriva a [src/domain/faults/deriveFaults.ts](src/domain/faults/deriveFaults.ts)
+(pur, amb tests) → cau Dexie `faults` (regenerada a cada `recomputeAll`). Commands a
+[src/db/commands.ts](src/db/commands.ts) (`commitFaultReport/Update/Resolve/Reset`); el reset
+fa barrera + neteja física (local `purgeFaultsBeforeBarrier` + RPC `reset_fault_events`,
+migració [0008](supabase/migrations/0008_fault_reset.sql)), igual que el reset d'estoc, amb
+neteja en cascada al `syncEngine`. UI: [src/routes/Faults.tsx](src/routes/Faults.tsx) (llista
+d'actives ordenada per gravetat + reportar) i [src/routes/FaultsHistory.tsx](src/routes/FaultsHistory.tsx)
+(cronologia + filtre per avaria + esborrar historial); components a `src/features/faults/`.
+
+**Dashboard configurable** — la portada ([src/routes/Home.tsx](src/routes/Home.tsx)) té cada
+secció commutable des d'Ajustos: botó d'avaries (3a columna; OFF per defecte), durada
+estimada (ON), recursos (OFF), caduca aviat (ON). Preferències **per dispositiu** a
+[src/auth/session.ts](src/auth/session.ts) (localStorage) + hook reactiu
+[src/hooks/useDashboardPrefs.ts](src/hooks/useDashboardPrefs.ts). El botó d'avaries porta un
+badge amb el comptador d'actives tenyit amb el color de la més greu.
+
 **Icones d'objecte (Iconify offline):** el selector d'icones d'un objecte (`IconPicker`)
 mostra ~6.400 icones de línia (Tabler complet + un subconjunt curat de Game Icons), totes
 **offline** (cap API). `ItemObject.icon` desa una clau Iconify (`tabler:apple`,

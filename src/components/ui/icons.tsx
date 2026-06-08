@@ -41,6 +41,9 @@ import {
   Gauge,
   Anchor,
   LifeBuoy,
+  MessageSquarePlus,
+  CheckCircle,
+  Plus,
   type LucideIcon,
 } from 'lucide-react';
 import type { StockDeltaReason } from '@/types/events';
@@ -82,6 +85,9 @@ export {
   Gauge,
   Anchor,
   LifeBuoy,
+  MessageSquarePlus,
+  CheckCircle,
+  Plus,
 };
 export type { LucideIcon };
 
@@ -126,5 +132,19 @@ export function resourceIcon(kind: ResourceKind): LucideIcon {
       return Droplets;
     case 'gas':
       return Flame;
+  }
+}
+
+/** Icona per a cada tipus d'event d'avaria a l'historial. */
+export function faultEventIcon(
+  type: 'report' | 'update' | 'resolve',
+): LucideIcon {
+  switch (type) {
+    case 'report':
+      return AlertTriangle;
+    case 'update':
+      return MessageSquarePlus;
+    case 'resolve':
+      return CheckCircle;
   }
 }

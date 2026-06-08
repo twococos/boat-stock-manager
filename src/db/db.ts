@@ -10,6 +10,7 @@ import type {
   ResourceState,
 } from '@/types/entities';
 import type { AppEvent } from '@/types/events';
+import type { DerivedFault } from '@/domain/faults/deriveFaults';
 
 /** Estat de sincronització d'una fila d'esdeveniment local. */
 export type Pending = 0 | 1;
@@ -56,6 +57,7 @@ export class BoatDB extends Dexie {
   inventory!: Table<InventoryEntry, string>; // CAU derivada
   resourceConfigs!: Table<ResourceConfig, string>; // CAU derivada (recursos continus)
   resourceStates!: Table<ResourceState, string>; // CAU derivada (recursos continus)
+  faults!: Table<DerivedFault, string>; // CAU derivada (avaries)
   pendingPhotos!: Table<PendingPhoto, string>;
   meta!: Table<SyncMeta, string>;
 
@@ -79,6 +81,11 @@ export class BoatDB extends Dexie {
     this.version(2).stores({
       resourceConfigs: 'kind',
       resourceStates: 'kind',
+    });
+    // v3: cau derivada de les avaries (projecció del log; es regenera a cada recompute,
+    // per això no cal migració de dades, només declarar el store nou).
+    this.version(3).stores({
+      faults: 'id, severity, resolved',
     });
   }
 }

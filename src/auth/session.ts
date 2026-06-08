@@ -11,6 +11,10 @@ const NAME_KEY = 'boat-stock-manager.userName';
 const DINERS_KEY = 'boat-stock-manager.defaultDiners';
 const EDIT_LOCKED_KEY = 'boat-stock-manager.editLocked';
 const DURATION_WINDOW_KEY = 'boat-stock-manager.durationWindowDays';
+const SHOW_FAULTS_BUTTON_KEY = 'boat-stock-manager.showFaultsButton';
+const SHOW_DURATION_KEY = 'boat-stock-manager.showDurationSection';
+const SHOW_RESOURCES_KEY = 'boat-stock-manager.showResourcesSection';
+const SHOW_EXPIRING_KEY = 'boat-stock-manager.showExpiringSection';
 
 export function getUserName(): string | null {
   return localStorage.getItem(NAME_KEY);
@@ -67,3 +71,33 @@ export function setDurationWindowDays(days: number): void {
   localStorage.setItem(DURATION_WINDOW_KEY, String(Math.max(1, Math.round(days))));
   window.dispatchEvent(new CustomEvent('duration-window-change'));
 }
+
+/**
+ * Preferències de visibilitat del dashboard (per dispositiu). Cada tripulant configura la
+ * seva vista. Es desen a localStorage; en canviar-les es dispara `dashboard-prefs-change`
+ * perquè la portada hi reaccioni a l'instant (l'event `storage` cobreix les altres pestanyes).
+ */
+function getFlag(key: string, fallback: boolean): boolean {
+  const v = localStorage.getItem(key);
+  return v === null ? fallback : v === '1';
+}
+function setFlag(key: string, value: boolean): void {
+  localStorage.setItem(key, value ? '1' : '0');
+  window.dispatchEvent(new CustomEvent('dashboard-prefs-change'));
+}
+
+/** Mostrar el botó d'avaries al dashboard. Per defecte NO. */
+export const getShowFaultsButton = (): boolean => getFlag(SHOW_FAULTS_BUTTON_KEY, false);
+export const setShowFaultsButton = (v: boolean): void => setFlag(SHOW_FAULTS_BUTTON_KEY, v);
+
+/** Mostrar la secció de durada estimada. Per defecte SÍ. */
+export const getShowDurationSection = (): boolean => getFlag(SHOW_DURATION_KEY, true);
+export const setShowDurationSection = (v: boolean): void => setFlag(SHOW_DURATION_KEY, v);
+
+/** Mostrar la secció de recursos (gasoil, aigua, gas). Per defecte NO. */
+export const getShowResourcesSection = (): boolean => getFlag(SHOW_RESOURCES_KEY, false);
+export const setShowResourcesSection = (v: boolean): void => setFlag(SHOW_RESOURCES_KEY, v);
+
+/** Mostrar la secció de productes que caduquen aviat. Per defecte SÍ. */
+export const getShowExpiringSection = (): boolean => getFlag(SHOW_EXPIRING_KEY, true);
+export const setShowExpiringSection = (v: boolean): void => setFlag(SHOW_EXPIRING_KEY, v);

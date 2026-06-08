@@ -9,27 +9,36 @@ import {
   ThumbsUp,
   Book,
   Gauge,
+  AlertTriangle,
   resourceIcon,
 } from '@/components/ui/icons';
 import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { ObjectDetail } from '@/features/objects/ObjectDetail';
 import { useDurations, useExpiring, useResourceDurations } from '@/hooks/useDerived';
-import { useObjects, useInventoryMap } from '@/hooks/useData';
+import { useObjects, useInventoryMap, useFaults } from '@/hooks/useData';
+import { useDashboardPrefs } from '@/hooks/useDashboardPrefs';
+import { activeFaults, highestActiveSeverity, SEVERITY_DOT } from '@/domain/faults/deriveFaults';
 import { formatQuantity } from '@/lib/format';
 import { t } from '@/text';
 
 /** Dashboard / portada: centrat en el menjar (el més usat). PLA.md secció 12.1. */
 export function Home() {
   const navigate = useNavigate();
+  const prefs = useDashboardPrefs();
   const durations = useDurations();
   const resourceRows = useResourceDurations();
   const expiring = useExpiring(7);
   const objects = useObjects() ?? [];
   const invMap = useInventoryMap();
+  const faults = useFaults() ?? [];
   const [detail, setDetail] = useState<ItemObject | null>(null);
   const [waterList, setWaterList] = useState(false);
 
   const waterObjects = objects.filter((o) => o.foodCategory === 'water');
+
+  const faultsMap = new Map(faults.map((f) => [f.id, f]));
+  const activeFaultCount = activeFaults(faultsMap).length;
+  const topSeverity = highestActiveSeverity(faultsMap);
 
   return (
     <div className="flex flex-col gap-5 pt-2">
@@ -51,8 +60,9 @@ export function Home() {
         </button>
       </div>
 
-      {/* Botons petits secundaris (meitat d'alçada) */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Botons petits secundaris (meitat d'alçada). Tres columnes si el botó d'avaries
+          està actiu, altrament dues. */}
+      <div className={`grid gap-3 ${prefs.showFaultsButton ? 'grid-cols-3' : 'grid-cols-2'}`}>
         <button
           onClick={() => navigate('/purchase')}
           className="flex min-h-touch flex-row items-center justify-center gap-2 rounded-2xl bg-boat-100 text-boat-900 shadow-sm active:scale-95"
@@ -67,10 +77,26 @@ export function Home() {
           <Gauge size={24} />
           <span className="text-sm font-semibold">{t.home.measure}</span>
         </button>
+        {prefs.showFaultsButton && (
+          <button
+            onClick={() => navigate('/faults')}
+            className="relative flex min-h-touch flex-row items-center justify-center gap-2 rounded-2xl bg-boat-100 text-boat-900 shadow-sm active:scale-95"
+          >
+            <AlertTriangle size={24} />
+            <span className="text-sm font-semibold">{t.home.faults}</span>
+            {activeFaultCount > 0 && topSeverity && (
+              <span
+                className={`absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold ${SEVERITY_DOT[topSeverity]}`}
+              >
+                {activeFaultCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Indicadors de durada (aigua, gas…) */}
-      {durations.length > 0 && (
+      {prefs.showDurationSection && durations.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-boat-700">{t.home.estimatedDuration}</h2>
           {durations.map((d) => {
@@ -123,7 +149,7 @@ export function Home() {
       )}
 
       {/* Recursos continus: gasoil, aigua de tancs, gas */}
-      {resourceRows.length > 0 && (
+      {prefs.showResourcesSection && resourceRows.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-boat-700">{t.home.resourcesCard}</h2>
           <Card className="flex flex-col gap-3">
@@ -164,6 +190,7 @@ export function Home() {
       )}
 
       {/* Caduca aviat */}
+      {prefs.showExpiringSection && (
       <section className="flex flex-col gap-2">
         <button
           onClick={() => navigate('/expiring')}
@@ -203,6 +230,7 @@ export function Home() {
           ))
         )}
       </section>
+      )}
 
       {/* Llistat d'aigües per tipus (des de la fila "Aigua potable") */}
       <Sheet open={waterList} onClose={() => setWaterList(false)} title={t.home.drinkingWater}>

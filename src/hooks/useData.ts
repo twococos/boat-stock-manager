@@ -76,3 +76,7 @@ export const useResourceState = (kind: ResourceKind): ResourceState | undefined 
 /** Config d'un recurs concret (o undefined), reactiu. */
 export const useResourceConfig = (kind: ResourceKind): ResourceConfig | undefined =>
   useLiveQuery(() => db.resourceConfigs.get(kind), [kind]);
+
+// ── avaries ────────────────────────────────────────────────────────────────────
+/** Totes les avaries derivades (actives i resoltes), reactiu. */
+export const useFaults = () => useLiveQuery(() => db.faults.toArray(), [], []);

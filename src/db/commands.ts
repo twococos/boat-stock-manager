@@ -7,7 +7,13 @@ import type {
   WaterTank,
   ID,
 } from '@/types/entities';
-import type { AppEvent, StockDeltaLine, StockDeltaReason, OrderKey } from '@/types/events';
+import type {
+  AppEvent,
+  StockDeltaLine,
+  StockDeltaReason,
+  OrderKey,
+  FaultSeverity,
+} from '@/types/events';
 import {
   makeStockDeltaEvent,
   makeStockBarrierEvent,
@@ -25,12 +31,20 @@ import {
   makeWaterRefillEvent,
   makeGasMeasureEvent,
   makeGasSwapEvent,
+  makeFaultReportEvent,
+  makeFaultUpdateEvent,
+  makeFaultResolveEvent,
+  makeFaultBarrierEvent,
   type EventContext,
 } from '@/domain/events/factories';
-import { addLocalEvent, purgeBeforeBarrier } from './repositories/events.repo';
+import {
+  addLocalEvent,
+  purgeBeforeBarrier,
+  purgeFaultsBeforeBarrier,
+} from './repositories/events.repo';
 import { getMeta, nextLocalSeq } from './repositories/meta.repo';
 import { recomputeAll } from './recompute';
-import { requestServerReset } from '@/sync/syncEngine';
+import { requestServerReset, requestServerFaultReset } from '@/sync/syncEngine';
 import { nowISO } from '@/lib/time';
 
 /**
@@ -213,4 +227,51 @@ export async function commitGasMeasure(
 export async function commitGasSwap(userName: string): Promise<void> {
   const ctx = await buildContext(userName);
   await commit(makeGasSwapEvent(ctx));
+}
+
+// ── avaries ────────────────────────────────────────────────────────────────────
+/** Reporta (crea) una avaria. Retorna el faultId creat. */
+export async function commitFaultReport(
+  userName: string,
+  data: { title: string; description: string; severity: FaultSeverity },
+): Promise<ID> {
+  const ctx = await buildContext(userName);
+  const event = makeFaultReportEvent(ctx, data);
+  await commit(event);
+  return event.faultId;
+}
+
+/** Afegeix una actualització follow-up a una avaria. */
+export async function commitFaultUpdate(
+  userName: string,
+  faultId: ID,
+  text: string,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeFaultUpdateEvent(ctx, faultId, text));
+}
+
+/** Soluciona una avaria (definitiu: surt de la llista d'actives). */
+export async function commitFaultResolve(
+  userName: string,
+  faultId: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeFaultResolveEvent(ctx, faultId));
+}
+
+/**
+ * Esborra l'historial d'avaries: emet una barrera (ignora tot el passat) i fa neteja física
+ * best-effort (local + servidor), conservant la barrera nova com a salvaguarda. Mirall de
+ * `commitStockReset`.
+ */
+export async function commitFaultReset(userName: string): Promise<void> {
+  const base = await buildContext(userName);
+  const ctx = { ...base, occurredAt: nowISO() };
+  const cut: OrderKey = { occurredAt: ctx.occurredAt, deviceId: ctx.deviceId, seq: ctx.seq };
+  const event = makeFaultBarrierEvent(ctx, cut);
+  await commit(event);
+  await purgeFaultsBeforeBarrier(cut, event.id);
+  await requestServerFaultReset(cut, event.id);
+  await recomputeAll();
 }

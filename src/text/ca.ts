@@ -72,6 +72,7 @@ export const ca = {
     buy: "Comprar",
     guide: "Guia",
     measure: "Mesura",
+    faults: "Avaries",
     estimatedDuration: "Durada estimada",
     noConsumption: "sense consum",
     expiringSoon: "Caduca aviat",
@@ -193,6 +194,50 @@ export const ca = {
       gasSwap: "Bombona canviada",
       config: "Configuració actualitzada",
     },
+  },
+
+  /** Avaries del vaixell. */
+  faults: {
+    title: "Avaries",
+    empty: "Cap avaria activa.",
+    report: "Reportar avaria",
+    /** Etiquetes de gravetat. */
+    severity: {
+      yellow: "Lleu",
+      orange: "Moderada",
+      red: "Greu",
+    } as Record<string, string>,
+    severityQuestion: "Gravetat",
+    titleLabel: "Títol",
+    titlePlaceholder: "p.ex. Fuita al motor",
+    descriptionLabel: "Descripció",
+    descriptionPlaceholder: "Detalls de l'avaria…",
+    reportedBy: (who: string) => `Reportada per ${who}`,
+    updates: "Actualitzacions",
+    noUpdates: "Cap actualització encara.",
+    addUpdate: "Afegir actualització",
+    updatePlaceholder: "Què ha passat o què s'ha fet…",
+    resolve: "Solucionar",
+    resolveConfirm: "Marcar aquesta avaria com a solucionada? Sortirà de la llista (quedarà a l'historial).",
+    updateBy: (who: string) => `per ${who}`,
+    viewHistory: "Historial d'avaries",
+    saveUpdate: "Desar",
+    // — historial —
+    historyTitle: "Historial d'avaries",
+    historyEmpty: "Cap event d'avaria encara.",
+    /** Etiquetes dels tipus d'event a l'historial. */
+    eventKind: {
+      report: "Reportada",
+      update: "Actualització",
+      resolve: "Solucionada",
+    } as Record<string, string>,
+    filterBy: (title: string) => `Només: ${title}`,
+    clearFilter: "✕ treure filtre",
+    resetAll: "Esborrar l'historial d'avaries",
+    resetConfirm:
+      "S'esborrarà TOT l'historial d'avaries (reports, actualitzacions i resolucions) a tots els dispositius. Aquesta acció no es pot desfer. Continuar?",
+    resetEntryTitle: "Historial reiniciat",
+    activeCount: (n: number) => (n === 1 ? "1 avaria activa" : `${n} avaries actives`),
   },
 
   /** Guia del vaixell (manual per a la tripulació). */
@@ -472,6 +517,17 @@ export const ca = {
     lockEdit: "Bloquejar edició",
     lockEditHint:
       "Amaga els botons d'afegir, editar i eliminar per evitar canvis accidentals. Comprar, cuinar i ajustar estoc segueixen disponibles.",
+    // — configuració del dashboard —
+    dashboard: "Dashboard",
+    dashboardHint: "Tria què es mostra a la pàgina d'inici.",
+    showFaultsButton: "Botó d'avaries",
+    showFaultsButtonHint: "Mostra el botó d'avaries entre Comprar i Mesura.",
+    showDurationSection: "Durada estimada",
+    showDurationSectionHint: "Indicadors de durada (aigua, gas…).",
+    showResourcesSection: "Recursos (gasoil, aigua, gas)",
+    showResourcesSectionHint: "Targeta amb el nivell de gasoil, aigua i gas.",
+    showExpiringSection: "Caduca aviat",
+    showExpiringSectionHint: "Productes que caduquen properament.",
     sync: "Sincronització",
     localMode: "Mode local",
     lastSync: (rel: string) => `Última: ${rel}`,

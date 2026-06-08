@@ -28,6 +28,11 @@ import type {
   WaterRefillEvent,
   GasMeasureEvent,
   GasSwapEvent,
+  FaultSeverity,
+  FaultReportEvent,
+  FaultUpdateEvent,
+  FaultResolveEvent,
+  FaultBarrierEvent,
 } from '@/types/events';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
@@ -202,4 +207,43 @@ export function makeGasMeasureEvent(
 
 export function makeGasSwapEvent(ctx: EventContext): GasSwapEvent {
   return { ...base(ctx), type: 'gas_swap' };
+}
+
+// ── avaries ──────────────────────────────────────────────────────────────────
+export function makeFaultReportEvent(
+  ctx: EventContext,
+  data: { title: string; description: string; severity: FaultSeverity },
+): FaultReportEvent {
+  const b = base(ctx);
+  // Per conveni el faultId és l'id del propi event report.
+  return {
+    ...b,
+    type: 'fault_report',
+    faultId: b.id,
+    title: data.title,
+    description: data.description,
+    severity: data.severity,
+  };
+}
+
+export function makeFaultUpdateEvent(
+  ctx: EventContext,
+  faultId: ID,
+  text: string,
+): FaultUpdateEvent {
+  return { ...base(ctx), type: 'fault_update', faultId, text };
+}
+
+export function makeFaultResolveEvent(
+  ctx: EventContext,
+  faultId: ID,
+): FaultResolveEvent {
+  return { ...base(ctx), type: 'fault_resolve', faultId };
+}
+
+export function makeFaultBarrierEvent(
+  ctx: EventContext,
+  cut: OrderKey,
+): FaultBarrierEvent {
+  return { ...base(ctx), type: 'fault_barrier', cut };
 }

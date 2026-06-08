@@ -40,7 +40,12 @@ export type EventType =
   | 'fault_report' // reportar (crear) una avaria
   | 'fault_update' // actualització follow-up lligada a una avaria
   | 'fault_resolve' // solucionar una avaria
-  | 'fault_barrier'; // reset de l'historial d'avaries (anàleg a stock_barrier 'reset')
+  | 'fault_barrier' // reset de l'historial d'avaries (anàleg a stock_barrier 'reset')
+  // ── llista de la compra ──
+  | 'shopping_add' // afegeix/edita la quantitat d'un objecte a la llista (delta amb signe)
+  | 'shopping_remove' // treu del tot un objecte de la llista
+  | 'shopping_bought' // marca comprat → treu de la llista (l'stock_delta de compra va a part)
+  | 'shopping_barrier'; // buidar tota la llista (anàleg a fault_barrier)
 
 /** Sobre comú a TOTS els esdeveniments (fila append-only del log). */
 export interface EventBase {
@@ -231,6 +236,43 @@ export interface FaultBarrierEvent extends EventBase {
   cut: OrderKey; // s'ignoren els fault_* amb clau < cut (tot el passat)
 }
 
+// ── llista de la compra ──────────────────────────────────────────────────────
+// Un ítem de la llista NO és una entitat amb id propi: la quantitat per objecte es DERIVA
+// agregant els deltes de shopping_add (saturats a 0) i filtrant els removed/bought. Sempre
+// referencien un objectId del catàleg (no text lliure). Veure src/domain/shopping/.
+
+/** Afegeix (o edita, amb delta negatiu) la quantitat d'un objecte a la llista de la compra. */
+export interface ShoppingAddEvent extends EventBase {
+  type: 'shopping_add';
+  objectId: ID;
+  delta: number; // amb signe: +N afegeix, -N redueix (editar amb el NumberStepper)
+}
+
+/** Treu del tot un objecte de la llista (tombstone lògic; anul·la la quantitat acumulada). */
+export interface ShoppingRemoveEvent extends EventBase {
+  type: 'shopping_remove';
+  objectId: ID;
+}
+
+/**
+ * Marca un objecte com a comprat: surt de la llista. L'entrada a l'estoc és un stock_delta
+ * separat emès atòmicament pel mateix command (commitShoppingBought).
+ */
+export interface ShoppingBoughtEvent extends EventBase {
+  type: 'shopping_bought';
+  objectId: ID;
+  qty: number; // unitats comprades (= quantitat que tenia a la llista en aquell moment)
+}
+
+/**
+ * Buidar tota la llista. Anàleg a FaultBarrierEvent: la derivació IGNORA tots els events
+ * shopping_* amb clau d'ordre < cut. La barrera es conserva com a salvaguarda determinista.
+ */
+export interface ShoppingBarrierEvent extends EventBase {
+  type: 'shopping_barrier';
+  cut: OrderKey; // s'ignoren els shopping_* amb clau < cut (tot el passat)
+}
+
 // ── unió discriminada ────────────────────────────────────────────────────────
 export type AppEvent =
   | StockDeltaEvent
@@ -252,4 +294,8 @@ export type AppEvent =
   | FaultReportEvent
   | FaultUpdateEvent
   | FaultResolveEvent
-  | FaultBarrierEvent;
+  | FaultBarrierEvent
+  | ShoppingAddEvent
+  | ShoppingRemoveEvent
+  | ShoppingBoughtEvent
+  | ShoppingBarrierEvent;

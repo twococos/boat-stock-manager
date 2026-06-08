@@ -4,7 +4,7 @@ import type { ItemObject, Recipe } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState, TileButton } from '@/components/ui/common';
-import { Package, BookOpen } from '@/components/ui/icons';
+import { Package, BookOpen, ClipboardList } from '@/components/ui/icons';
 import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { useObjects, useRecipes, useObjectsMap } from '@/hooks/useData';
 import { recipeToPurchaseLines } from '@/domain/recipes/scaling';
@@ -75,7 +75,7 @@ export function PurchaseFlow() {
 
   if (mode === 'menu') {
     return (
-      <div className="flex flex-col gap-4 pt-2">
+      <div className="flex flex-1 flex-col gap-4 pt-2">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{t.purchase.title}</h1>
           {addedCount > 0 && (
@@ -90,6 +90,14 @@ export function PurchaseFlow() {
         </div>
         <Button variant="secondary" onClick={() => navigate('/')}>
           {t.purchase.finish}
+        </Button>
+        {/* A baix de tot, contra la barra de navegació: separat de les opcions d'afegir estoc. */}
+        <Button
+          onClick={() => navigate('/shopping')}
+          className="mt-auto flex items-center justify-center gap-2"
+        >
+          <ClipboardList size={20} />
+          {t.shopping.openList}
         </Button>
       </div>
     );

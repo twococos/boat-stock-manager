@@ -103,6 +103,7 @@ export function ObjectsList() {
         {detail && (
           <ObjectDetail
             object={detail}
+            onNavigate={() => setDetail(null)}
             onEdit={
               editLocked
                 ? undefined

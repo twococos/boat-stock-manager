@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { ItemObject, Recipe } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
@@ -24,11 +25,18 @@ export function ObjectDetail({
   object,
   onEdit,
   onAdjust,
+  onNavigate,
+  hideRecipes,
 }: {
   object: ItemObject;
   onEdit?: () => void;
   onAdjust?: () => void;
+  /** El pare el passa per tancar el seu Sheet abans que naveguem a un lloc. */
+  onNavigate?: () => void;
+  /** Amaga la secció de receptes (p.ex. quan s'obre des d'una recepta, evita anidar-ne més). */
+  hideRecipes?: boolean;
 }) {
+  const navigate = useNavigate();
   const { userName } = useAuth();
   const entry = useInventoryMap().get(object.id);
   const quantity = entry?.quantity ?? 0;
@@ -109,9 +117,16 @@ export function ObjectDetail({
           </h3>
           <div className="flex flex-wrap gap-2">
             {here.map((l) => (
-              <span key={l.id} className="rounded-full bg-boat-100 px-3 py-1 text-sm text-boat-900">
+              <button
+                key={l.id}
+                onClick={() => {
+                  onNavigate?.();
+                  navigate(`/locations/${l.id}`);
+                }}
+                className="rounded-full bg-boat-100 px-3 py-1 text-sm text-boat-900 active:scale-95"
+              >
                 {l.name}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -142,7 +157,7 @@ export function ObjectDetail({
       )}
 
       {/* Receptes que el contenen (només menjar) */}
-      {object.stockType === 'food' && (
+      {!hideRecipes && object.stockType === 'food' && (
         <div>
           <h3 className="mb-1 flex items-center gap-1 text-sm font-semibold text-boat-700">
             <BookOpen size={15} /> {t.object.recipesWithIngredient}

@@ -14,7 +14,11 @@ import { getMeta, putMeta } from '@/db/repositories/meta.repo';
 import { recomputeAll } from '@/db/recompute';
 import { activeResetBarrier } from '@/domain/inventory/barrier';
 import { activeFaultBarrier } from '@/domain/faults/deriveFaults';
-import { purgeFaultsBeforeBarrier } from '@/db/repositories/events.repo';
+import { activeShoppingBarrier } from '@/domain/shopping/deriveShoppingList';
+import {
+  purgeFaultsBeforeBarrier,
+  purgeShoppingBeforeBarrier,
+} from '@/db/repositories/events.repo';
 import { nowISO } from '@/lib/time';
 import type { AppEvent, OrderKey } from '@/types/events';
 
@@ -134,6 +138,15 @@ async function runSync(): Promise<SyncResult> {
         const removed = await purgeFaultsBeforeBarrier(faultReset.cut, faultReset.id);
         if (removed > 0) purgedByReset = true;
       }
+      // Mateixa lògica per al buidat de la llista de la compra.
+      const shoppingBarrier = activeShoppingBarrier(allLocal);
+      if (shoppingBarrier) {
+        const removed = await purgeShoppingBeforeBarrier(
+          shoppingBarrier.cut,
+          shoppingBarrier.id,
+        );
+        if (removed > 0) purgedByReset = true;
+      }
     }
 
     // ── 1. PUSH ──────────────────────────────────────────────────────────────
@@ -174,6 +187,14 @@ async function runSync(): Promise<SyncResult> {
       const faultReset = activeFaultBarrier(pulledEvents);
       if (faultReset) {
         const removed = await purgeFaultsBeforeBarrier(faultReset.cut, faultReset.id);
+        if (removed > 0) purgedByPulledReset = true;
+      }
+      const shoppingBarrier = activeShoppingBarrier(pulledEvents);
+      if (shoppingBarrier) {
+        const removed = await purgeShoppingBeforeBarrier(
+          shoppingBarrier.cut,
+          shoppingBarrier.id,
+        );
         if (removed > 0) purgedByPulledReset = true;
       }
     }

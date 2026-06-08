@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ResourceConfig, ResourceState } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
-import { Card, ProgressBar } from '@/components/ui/common';
+import { Card, ProgressBar, ToggleButton } from '@/components/ui/common';
 import { ConfirmAction } from '@/components/ui/ConfirmAction';
 import { commitGasMeasure, commitGasSwap, commitResourceConfig } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
@@ -24,6 +24,8 @@ export function GasPanel({
   const [editCfg, setEditCfg] = useState(false);
   const [full, setFull] = useState(fullKg);
   const [empty, setEmpty] = useState(emptyKg);
+  // Quina targeta d'acció està desplegada (null = cap).
+  const [open, setOpen] = useState<null | 'measure' | 'swap'>(null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,31 +43,52 @@ export function GasPanel({
         <ProgressBar percent={state?.percent ?? null} />
       </Card>
 
-      {/* Afegir mesura (pes) */}
-      <Card className="flex flex-col gap-3">
-        <label className="text-sm font-semibold text-boat-700">{t.resources.gasWeight}</label>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step={0.05}
-          value={weight || ''}
-          onChange={(e) => setWeight(Number(e.target.value))}
-          className="rounded-xl border border-boat-100 px-4 py-3"
+      {/* Toggles d'acció */}
+      <div className="flex gap-2">
+        <ToggleButton
+          label={t.resources.toggleMeasure}
+          active={open === 'measure'}
+          onClick={() => setOpen(open === 'measure' ? null : 'measure')}
         />
-        <Button onClick={() => void commitGasMeasure(userName ?? '', weight)}>
-          {t.resources.addMeasure}
-        </Button>
-      </Card>
+        <ToggleButton
+          label={t.resources.swapBottle}
+          active={open === 'swap'}
+          onClick={() => setOpen(open === 'swap' ? null : 'swap')}
+        />
+      </div>
 
-      {/* Canviar bombona */}
-      <ConfirmAction
-        label={t.resources.swapBottle}
-        message={t.resources.swapBottleConfirm}
-        confirmLabel={t.resources.swapBottle}
-        variant="secondary"
-        onConfirm={() => void commitGasSwap(userName ?? '')}
-      />
+      {/* Afegir mesura (pes) */}
+      {open === 'measure' && (
+        <Card className="flex flex-col gap-3">
+          <label className="text-sm font-semibold text-boat-700">{t.resources.gasWeight}</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={0.05}
+            value={weight || ''}
+            onChange={(e) => setWeight(Number(e.target.value))}
+            className="rounded-xl border border-boat-100 px-4 py-3"
+          />
+          <Button onClick={() => void commitGasMeasure(userName ?? '', weight)}>
+            {t.resources.addMeasure}
+          </Button>
+        </Card>
+      )}
+
+      {/* Canviar bombona (confirma i canvia directament) */}
+      {open === 'swap' && (
+        <ConfirmAction
+          label={t.resources.swapBottle}
+          message={t.resources.swapBottleConfirm}
+          confirmLabel={t.resources.swapBottle}
+          variant="secondary"
+          onConfirm={async () => {
+            await commitGasSwap(userName ?? '');
+            setOpen(null);
+          }}
+        />
+      )}
 
       {/* Configuració */}
       {editCfg ? (

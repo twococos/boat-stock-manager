@@ -80,3 +80,8 @@ export const useResourceConfig = (kind: ResourceKind): ResourceConfig | undefine
 // ── avaries ────────────────────────────────────────────────────────────────────
 /** Totes les avaries derivades (actives i resoltes), reactiu. */
 export const useFaults = () => useLiveQuery(() => db.faults.toArray(), [], []);
+
+// ── llista de la compra ──────────────────────────────────────────────────────
+/** Tots els ítems de la llista de la compra (agregats per objecte), reactiu. */
+export const useShoppingItems = () =>
+  useLiveQuery(() => db.shoppingItems.toArray(), [], []);

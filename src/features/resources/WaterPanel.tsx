@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ResourceConfig, ResourceState, WaterTank } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
-import { Card, ProgressBar } from '@/components/ui/common';
+import { Card, ProgressBar, ToggleButton } from '@/components/ui/common';
 import { commitWaterMeasure, commitWaterRefill, commitResourceConfig } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { nowISO } from '@/lib/time';
@@ -29,6 +29,8 @@ export function WaterPanel({
   const [editCfg, setEditCfg] = useState(false);
   const [proa, setProa] = useState(proaCap);
   const [popa, setPopa] = useState(popaCap);
+  // Quina targeta d'acció està desplegada (null = cap).
+  const [open, setOpen] = useState<null | 'measure' | 'fill'>(null);
 
   const tankChanged = selectedTank !== activeTank;
   const litersOf = (tank: WaterTank) =>
@@ -64,7 +66,22 @@ export function WaterPanel({
         </div>
       </Card>
 
+      {/* Toggles d'acció */}
+      <div className="flex gap-2">
+        <ToggleButton
+          label={t.resources.toggleMeasure}
+          active={open === 'measure'}
+          onClick={() => setOpen(open === 'measure' ? null : 'measure')}
+        />
+        <ToggleButton
+          label={t.resources.fill}
+          active={open === 'fill'}
+          onClick={() => setOpen(open === 'fill' ? null : 'fill')}
+        />
+      </div>
+
       {/* Afegir mesura del comptador + tanc actiu */}
+      {open === 'measure' && (
       <Card className="flex flex-col gap-3">
         <label className="text-sm font-semibold text-boat-700">{t.resources.counterReading}</label>
         <input
@@ -98,8 +115,10 @@ export function WaterPanel({
           {t.resources.addMeasure}
         </Button>
       </Card>
+      )}
 
       {/* Omplir un tanc */}
+      {open === 'fill' && (
       <Card className="flex flex-col gap-3">
         <label className="text-sm font-semibold text-boat-700">{t.resources.fill}</label>
         <div className="flex gap-2">
@@ -144,6 +163,7 @@ export function WaterPanel({
           </Button>
         </div>
       </Card>
+      )}
 
       {/* Configuració */}
       {editCfg ? (

@@ -4,7 +4,7 @@ import type { ItemObject, StowageLocation } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { NumberStepper, EmptyState } from '@/components/ui/common';
-import { Archive, Pencil } from '@/components/ui/icons';
+import { Archive, Pencil, Wrench } from '@/components/ui/icons';
 import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { LocationForm } from '@/features/locations/LocationForm';
@@ -41,11 +41,31 @@ export function LocationView() {
   const [adjusting, setAdjusting] = useState<ItemObject | null>(null);
   const [newQty, setNewQty] = useState(0);
   const [editing, setEditing] = useState(false);
+  // Mode d'ajust en bloc: edita la quantitat REAL de cada objecte del compartiment.
+  const [bulkMode, setBulkMode] = useState(false);
+  const [draft, setDraft] = useState<Record<string, number>>({});
 
   const here = useMemo(
     () => objects.filter((o) => o.usualLocationIds.includes(id ?? '')),
     [objects, id],
   );
+
+  function startBulk() {
+    setDraft(Object.fromEntries(here.map((o) => [o.id, invMap.get(o.id)?.quantity ?? 0])));
+    setBulkMode(true);
+  }
+
+  async function saveBulk() {
+    if (!userName) return;
+    const lines = here
+      .map((o) => ({ id: o.id, current: invMap.get(o.id)?.quantity ?? 0, next: draft[o.id] ?? 0 }))
+      .filter(({ current, next }) => next !== current)
+      .map(({ id: objectId, current, next }) => ({ objectId, delta: next - current }));
+    if (lines.length > 0) {
+      await commitStockDelta(userName, 'adjustment', lines);
+    }
+    setBulkMode(false);
+  }
 
   async function confirmAdjust() {
     if (!adjusting || !userName) return;
@@ -77,22 +97,44 @@ export function LocationView() {
 
   return (
     <div className="flex flex-col gap-3 pt-2">
-      <button onClick={() => navigate('/locations')} className="self-start text-sm text-boat-600">
+      <button
+        onClick={() => (bulkMode ? setBulkMode(false) : navigate('/locations'))}
+        className="self-start text-sm text-boat-600"
+      >
         {t.locationView.back}
       </button>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="flex items-center gap-2 text-xl font-bold">
-          <Archive size={22} className="text-boat-700" />
-          {location.name}
+        <h1 className="flex min-w-0 items-center gap-2 text-xl font-bold">
+          <Archive size={22} className="flex-shrink-0 text-boat-700" />
+          <span className="truncate">{location.name}</span>
         </h1>
-        {!editLocked && (
+        {bulkMode ? (
           <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1 text-sm text-boat-600"
+            onClick={() => void saveBulk()}
+            className="flex flex-shrink-0 items-center gap-1 rounded-xl bg-boat-700 px-3 py-2 text-sm font-semibold text-white active:scale-95"
           >
-            <Pencil size={16} />
-            {t.locationView.edit}
+            {t.locationView.bulkSave}
           </button>
+        ) : (
+          <div className="flex flex-shrink-0 items-center gap-3">
+            {/* Ajustar estoc és un moviment d'estoc, no edició: visible encara que l'edició estigui bloquejada. */}
+            <button
+              onClick={startBulk}
+              className="flex items-center gap-1 text-sm text-boat-600"
+            >
+              <Wrench size={16} />
+              {t.locationView.bulkAdjust}
+            </button>
+            {!editLocked && (
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-1 text-sm text-boat-600"
+              >
+                <Pencil size={16} />
+                {t.locationView.edit}
+              </button>
+            )}
+          </div>
         )}
       </div>
       {location.description && (
@@ -115,6 +157,28 @@ export function LocationView() {
         <ul className="flex flex-col gap-2">
           {here.map((o) => {
             const qty = invMap.get(o.id)?.quantity ?? 0;
+            if (bulkMode) {
+              return (
+                <li
+                  key={o.id}
+                  className="flex items-center justify-between gap-2 rounded-2xl bg-white p-3 shadow-sm"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center">
+                      <ObjectIcon icon={o.icon} size={24} />
+                    </span>
+                    <span className="truncate font-semibold">{o.name}</span>
+                  </span>
+                  <NumberStepper
+                    value={draft[o.id] ?? 0}
+                    onChange={(v) => setDraft((d) => ({ ...d, [o.id]: v }))}
+                    min={0}
+                    step={o.quantityType === 'units' ? 1 : 0.1}
+                    size="sm"
+                  />
+                </li>
+              );
+            }
             return (
               <li key={o.id}>
                 <button
@@ -141,6 +205,7 @@ export function LocationView() {
         {detail && (
           <ObjectDetail
             object={detail}
+            onNavigate={() => setDetail(null)}
             onAdjust={() => {
               setNewQty(invMap.get(detail.id)?.quantity ?? 0);
               setAdjusting(detail);

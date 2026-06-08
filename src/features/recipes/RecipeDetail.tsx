@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { Recipe } from '@/types/entities';
+import type { ItemObject, Recipe } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { ChefHat, Flame } from '@/components/ui/icons';
 import { ObjectIcon } from '@/components/ui/ObjectIcon';
 import { useObjectsMap } from '@/hooks/useData';
 import { CookRecipePanel } from '@/features/cook/CookRecipePanel';
+import { ObjectDetail } from '@/features/objects/ObjectDetail';
 import { t } from '@/text';
 
 /**
@@ -21,6 +22,7 @@ export function RecipeDetail({
 }) {
   const objectsMap = useObjectsMap();
   const [cooking, setCooking] = useState(false);
+  const [ingredientObj, setIngredientObj] = useState<ItemObject | null>(null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -48,8 +50,8 @@ export function RecipeDetail({
         <ul className="flex flex-col gap-1 text-sm">
           {recipe.ingredients.map((ing) => {
             const obj = objectsMap.get(ing.objectId);
-            return (
-              <li key={ing.objectId} className="flex items-center justify-between">
+            const content = (
+              <>
                 <span className="flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center">
                     <ObjectIcon icon={obj?.icon} size={16} className="text-boat-400" />
@@ -57,6 +59,20 @@ export function RecipeDetail({
                   <span>{obj?.name ?? t.recipeDetail.deletedObject}</span>
                 </span>
                 <span className="text-boat-500">{ing.quantityPerPerson}</span>
+              </>
+            );
+            return (
+              <li key={ing.objectId}>
+                {obj ? (
+                  <button
+                    onClick={() => setIngredientObj(obj)}
+                    className="flex w-full items-center justify-between active:scale-[0.98]"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between">{content}</div>
+                )}
               </li>
             );
           })}
@@ -82,6 +98,17 @@ export function RecipeDetail({
             onCooked?.();
           }}
         />
+      </Sheet>
+
+      {/* Detall de l'ingredient (sense receptes per no anidar-ne més) */}
+      <Sheet open={!!ingredientObj} onClose={() => setIngredientObj(null)}>
+        {ingredientObj && (
+          <ObjectDetail
+            object={ingredientObj}
+            hideRecipes
+            onNavigate={() => setIngredientObj(null)}
+          />
+        )}
       </Sheet>
     </div>
   );

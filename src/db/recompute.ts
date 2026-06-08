@@ -5,6 +5,7 @@ import { deriveDefinitions } from '@/domain/inventory/deriveDefinitions';
 import { deriveResourceConfig } from '@/domain/resources/deriveResourceConfig';
 import { deriveResources } from '@/domain/resources/deriveResources';
 import { deriveFaults } from '@/domain/faults/deriveFaults';
+import { deriveShoppingList } from '@/domain/shopping/deriveShoppingList';
 
 /**
  * Recalcula tot l'estat derivat a partir del log d'esdeveniments i el desa a les caus
@@ -40,6 +41,9 @@ export async function recomputeAll(): Promise<void> {
   // 5) Derivar les avaries (estat actiu/resolt + updates) a partir dels events fault_*.
   const faults = deriveFaults(events);
 
+  // 6) Derivar la llista de la compra (quantitats agregades) dels events shopping_*.
+  const shopping = deriveShoppingList(events);
+
   await db.transaction(
     'rw',
     [
@@ -51,6 +55,7 @@ export async function recomputeAll(): Promise<void> {
       db.resourceConfigs,
       db.resourceStates,
       db.faults,
+      db.shoppingItems,
     ],
     async () => {
       // Reemplaçar completament les caus (recompute-from-scratch).
@@ -63,6 +68,7 @@ export async function recomputeAll(): Promise<void> {
         db.resourceConfigs.clear(),
         db.resourceStates.clear(),
         db.faults.clear(),
+        db.shoppingItems.clear(),
       ]);
 
       await Promise.all([
@@ -74,6 +80,7 @@ export async function recomputeAll(): Promise<void> {
         db.resourceConfigs.bulkPut([...resourceConfigs.values()]),
         db.resourceStates.bulkPut([...resourceStates.values()]),
         db.faults.bulkPut([...faults.values()]),
+        db.shoppingItems.bulkPut([...shopping.values()]),
       ]);
     },
   );

@@ -51,9 +51,11 @@ export function Layout() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto px-4 pb-24">
-        {/* `key` per ruta → cada navegació refà el fade d'entrada. */}
-        <div key={location.pathname} className="animate-fade-in">
+      <main className="flex flex-1 flex-col overflow-y-auto px-4 pb-24">
+        {/* `key` per ruta → cada navegació refà el fade d'entrada. El wrapper creix amb
+            flex-1 (no amb height:%) perquè les pàgines puguin ancorar contingut a baix amb
+            un fill `flex-1` + `mt-auto` (p.ex. el botó del Mode compra). */}
+        <div key={location.pathname} className="flex flex-1 flex-col animate-fade-in">
           <Outlet />
         </div>
       </main>

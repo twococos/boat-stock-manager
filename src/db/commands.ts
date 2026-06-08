@@ -35,12 +35,17 @@ import {
   makeFaultUpdateEvent,
   makeFaultResolveEvent,
   makeFaultBarrierEvent,
+  makeShoppingAddEvent,
+  makeShoppingRemoveEvent,
+  makeShoppingBoughtEvent,
+  makeShoppingBarrierEvent,
   type EventContext,
 } from '@/domain/events/factories';
 import {
   addLocalEvent,
   purgeBeforeBarrier,
   purgeFaultsBeforeBarrier,
+  purgeShoppingBeforeBarrier,
 } from './repositories/events.repo';
 import { getMeta, nextLocalSeq } from './repositories/meta.repo';
 import { recomputeAll } from './recompute';
@@ -273,5 +278,70 @@ export async function commitFaultReset(userName: string): Promise<void> {
   await commit(event);
   await purgeFaultsBeforeBarrier(cut, event.id);
   await requestServerFaultReset(cut, event.id);
+  await recomputeAll();
+}
+
+// ── llista de la compra ──────────────────────────────────────────────────────
+/** Afegeix (delta>0) o edita (delta amb signe) la quantitat d'un objecte a la llista. */
+export async function commitShoppingAdd(
+  userName: string,
+  objectId: ID,
+  delta: number,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeShoppingAddEvent(ctx, objectId, delta));
+}
+
+/** Treu del tot un objecte de la llista (sense afectar l'estoc). */
+export async function commitShoppingRemove(
+  userName: string,
+  objectId: ID,
+): Promise<void> {
+  const ctx = await buildContext(userName);
+  await commit(makeShoppingRemoveEvent(ctx, objectId));
+}
+
+/**
+ * "Comprat!": treu l'objecte de la llista I l'afegeix a l'estoc. Emet DOS events amb el
+ * mateix `occurredAt` i dos `seq` consecutius (stock_delta purchase + shopping_bought) i un
+ * sol recompute, per atomicitat lògica. `expiresAt` opcional (objectes amb caducitat a l'afegir).
+ */
+export async function commitShoppingBought(
+  userName: string,
+  objectId: ID,
+  qty: number,
+  expiresAt?: string,
+): Promise<void> {
+  const meta = await getMeta();
+  const occurredAt = nowISO();
+  const seq1 = await nextLocalSeq();
+  const seq2 = await nextLocalSeq();
+  const ctx1: EventContext = { deviceId: meta.deviceId, userName, seq: seq1, occurredAt };
+  const ctx2: EventContext = { deviceId: meta.deviceId, userName, seq: seq2, occurredAt };
+  const stockEvent = makeStockDeltaEvent(ctx1, 'purchase', [
+    {
+      objectId,
+      delta: qty,
+      ...(expiresAt ? { expiresAt: new Date(expiresAt).toISOString() } : {}),
+    },
+  ]);
+  const boughtEvent = makeShoppingBoughtEvent(ctx2, objectId, qty);
+  await addLocalEvent(stockEvent);
+  await addLocalEvent(boughtEvent);
+  await recomputeAll();
+}
+
+/**
+ * Buidar la llista de la compra: emet una barrera (ignora tot el passat) + neteja física local
+ * best-effort, conservant la barrera nova com a salvaguarda. Mirall de `commitFaultReset` però
+ * SENSE crida RPC de servidor (els shopping_* vells queden al servidor; la barrera els ignora).
+ */
+export async function commitShoppingClear(userName: string): Promise<void> {
+  const base = await buildContext(userName);
+  const ctx = { ...base, occurredAt: nowISO() };
+  const cut: OrderKey = { occurredAt: ctx.occurredAt, deviceId: ctx.deviceId, seq: ctx.seq };
+  const event = makeShoppingBarrierEvent(ctx, cut);
+  await commit(event);
+  await purgeShoppingBeforeBarrier(cut, event.id);
   await recomputeAll();
 }

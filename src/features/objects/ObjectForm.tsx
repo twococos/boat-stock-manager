@@ -29,6 +29,7 @@ const FOOD_CATEGORIES: { value: FoodCategory; label: string }[] = [
   { value: 'breakfast', label: t.objectForm.foodCategoryOptions.breakfast },
   { value: 'dessert', label: t.objectForm.foodCategoryOptions.dessert },
   { value: 'water', label: t.objectForm.foodCategoryOptions.water },
+  { value: 'drink', label: t.objectForm.foodCategoryOptions.drink },
   { value: 'other', label: t.objectForm.foodCategoryOptions.other },
 ];
 

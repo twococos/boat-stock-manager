@@ -2,7 +2,8 @@ import type { FoodCategory, ItemObject } from '@/types/entities';
 
 /** Categories agrupades per a cada opció del menú de cuinar. */
 export const COOK_CATEGORIES: Record<string, FoodCategory[]> = {
-  water: ['water'],
+  // "Begudes" agrupa la beguda en general i l'aigua (categoria antiga, conservada).
+  drink: ['drink', 'water'],
   snacks: ['snacks'],
   dessert: ['dessert', 'fruit'],
   breakfast: ['breakfast'],

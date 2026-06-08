@@ -276,7 +276,7 @@ export function Home() {
       </Sheet>
 
       <Sheet open={!!detail} onClose={() => setDetail(null)}>
-        {detail && <ObjectDetail object={detail} />}
+        {detail && <ObjectDetail object={detail} onNavigate={() => setDetail(null)} />}
       </Sheet>
     </div>
   );

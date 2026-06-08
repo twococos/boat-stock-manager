@@ -11,6 +11,7 @@ import type {
 } from '@/types/entities';
 import type { AppEvent } from '@/types/events';
 import type { DerivedFault } from '@/domain/faults/deriveFaults';
+import type { DerivedShoppingItem } from '@/domain/shopping/deriveShoppingList';
 
 /** Estat de sincronització d'una fila d'esdeveniment local. */
 export type Pending = 0 | 1;
@@ -58,6 +59,7 @@ export class BoatDB extends Dexie {
   resourceConfigs!: Table<ResourceConfig, string>; // CAU derivada (recursos continus)
   resourceStates!: Table<ResourceState, string>; // CAU derivada (recursos continus)
   faults!: Table<DerivedFault, string>; // CAU derivada (avaries)
+  shoppingItems!: Table<DerivedShoppingItem, string>; // CAU derivada (llista de la compra)
   pendingPhotos!: Table<PendingPhoto, string>;
   meta!: Table<SyncMeta, string>;
 
@@ -86,6 +88,11 @@ export class BoatDB extends Dexie {
     // per això no cal migració de dades, només declarar el store nou).
     this.version(3).stores({
       faults: 'id, severity, resolved',
+    });
+    // v4: cau derivada de la llista de la compra (projecció del log; es regenera a cada
+    // recompute, només cal declarar el store nou). Clau primària = objectId (agregat).
+    this.version(4).stores({
+      shoppingItems: 'objectId',
     });
   }
 }

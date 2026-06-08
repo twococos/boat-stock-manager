@@ -107,6 +107,35 @@ export async function purgeFaultsBeforeBarrier(
   return toDelete.length;
 }
 
+/**
+ * Neteja física després de buidar la llista de la compra: esborra localment els events
+ * shopping_* (`shopping_add`/`shopping_remove`/`shopping_bought`) anteriors al tall (clau <
+ * cut) i totes les `shopping_barrier` EXCEPTE la d'id `keepBarrierId`. Mirall de
+ * `purgeFaultsBeforeBarrier`. NO toca els `stock_delta` (l'estoc de "Comprat!" és real).
+ * Retorna quants n'ha tret.
+ */
+export async function purgeShoppingBeforeBarrier(
+  cut: OrderKey,
+  keepBarrierId: string,
+): Promise<number> {
+  const rows = await db.events.toArray();
+  const toDelete = rows.filter((r) => {
+    if (r.type === 'shopping_barrier') return r.id !== keepBarrierId;
+    if (
+      r.type === 'shopping_add' ||
+      r.type === 'shopping_remove' ||
+      r.type === 'shopping_bought'
+    ) {
+      return compareKey(keyOf(r), cut) < 0;
+    }
+    return false;
+  });
+  if (toDelete.length > 0) {
+    await db.events.bulkDelete(toDelete.map((r) => r.id));
+  }
+  return toDelete.length;
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

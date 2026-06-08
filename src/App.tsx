@@ -9,6 +9,8 @@ import { MeasureMenu } from './routes/MeasureMenu';
 import { ResourceDetail } from './routes/ResourceDetail';
 import { Guide } from './routes/Guide';
 import { PurchaseFlow } from './routes/PurchaseFlow';
+import { ShoppingList } from './routes/ShoppingList';
+import { ShoppingHistory } from './routes/ShoppingHistory';
 import { ObjectsList } from './routes/ObjectsList';
 import { LocationsList } from './routes/LocationsList';
 import { LocationView } from './routes/LocationView';
@@ -34,6 +36,8 @@ const router = createHashRouter([
       { path: 'resources/:kind', element: <ResourceDetail /> },
       { path: 'guide', element: <Guide /> },
       { path: 'purchase', element: <PurchaseFlow /> },
+      { path: 'shopping', element: <ShoppingList /> },
+      { path: 'shopping/history', element: <ShoppingHistory /> },
       { path: 'objects', element: <ObjectsList /> },
       { path: 'objects/recipes', element: <Recipes /> },
       { path: 'recipes', element: <Recipes /> },

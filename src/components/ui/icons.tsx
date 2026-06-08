@@ -15,6 +15,7 @@ import {
   Sailboat,
   ChefHat,
   ShoppingCart,
+  ClipboardList,
   Wrench,
   BookOpen,
   Book,
@@ -59,6 +60,7 @@ export {
   Sailboat,
   ChefHat,
   ShoppingCart,
+  ClipboardList,
   Wrench,
   BookOpen,
   Book,
@@ -104,13 +106,13 @@ export function reasonIcon(reason: StockDeltaReason): LucideIcon {
 }
 
 /** Icona orientativa per a cada opció del menú de cuina. */
-export type CookMode = 'recipe' | 'water' | 'snacks' | 'dessert' | 'breakfast' | 'all';
+export type CookMode = 'recipe' | 'drink' | 'snacks' | 'dessert' | 'breakfast' | 'all';
 
 export function cookModeIcon(mode: CookMode): LucideIcon {
   switch (mode) {
     case 'recipe':
       return BookOpen;
-    case 'water':
+    case 'drink':
       return Droplet;
     case 'snacks':
       return Cookie;
@@ -146,5 +148,19 @@ export function faultEventIcon(
       return MessageSquarePlus;
     case 'resolve':
       return CheckCircle;
+  }
+}
+
+/** Icona per a cada tipus d'event de la llista de la compra a l'historial. */
+export function shoppingEventIcon(
+  kind: 'add' | 'bought' | 'remove',
+): LucideIcon {
+  switch (kind) {
+    case 'add':
+      return Plus;
+    case 'bought':
+      return CheckCircle;
+    case 'remove':
+      return Trash2;
   }
 }

@@ -89,7 +89,7 @@ export const ca = {
   cook: {
     whatToCook: "Què cuinem?",
     recipe: "Recepta",
-    water: "Aigua",
+    drink: "Begudes",
     snacks: "Picar",
     dessert: "Postre",
     breakfast: "Esmorzar",
@@ -99,7 +99,7 @@ export const ca = {
     /** Títols de cada submode. */
     titles: {
       recipe: "Receptes",
-      water: "Aigua",
+      drink: "Begudes",
       snacks: "Per picar",
       dessert: "Postres i fruita",
       breakfast: "Esmorzar",
@@ -144,6 +144,7 @@ export const ca = {
 
     // — accions —
     addMeasure: "Afegir mesura",
+    toggleMeasure: "Nova mesura",
     fill: "Omplir",
     full: "PLE",
     liters: "Litres",
@@ -275,6 +276,34 @@ export const ca = {
     addIngredients: "Afegir ingredients",
   },
 
+  /** Llista de la compra. */
+  shopping: {
+    openList: "Llista de la compra",
+    title: "Llista de la compra",
+    searchPlaceholder: "Cerca un objecte per afegir…",
+    noResults: "Cap objecte. Crea'n a la pestanya Objectes.",
+    empty: "La llista és buida. Cerca un objecte per afegir-l'hi.",
+    addToListTitle: (name: string) => `Afegir a la llista: ${name}`,
+    addToList: "Afegir a la llista",
+    inList: "A la llista",
+    remove: "Eliminar",
+    bought: "Comprat!",
+    expiryDate: "Data de caducitat",
+    clearAll: "Buidar la llista",
+    clearConfirm:
+      "Es trauran TOTS els elements de la llista de la compra. Continuar?",
+    history: "Historial",
+    historyTitle: "Historial de la compra",
+    historyEmpty: "Cap moviment a la llista encara.",
+    clearedEntryTitle: "Llista buidada",
+    showCleared: (n: number) => (n === 1 ? "1 element" : `${n} elements`),
+    eventKind: {
+      add: "Afegit",
+      bought: "Comprat",
+      remove: "Eliminat",
+    } as Record<string, string>,
+  },
+
   /** Catàleg d'objectes. */
   objects: {
     title: "Objectes",
@@ -322,6 +351,7 @@ export const ca = {
       breakfast: "Esmorzar",
       dessert: "Postres",
       water: "Aigua",
+      drink: "Beguda",
       other: "Altres",
     } as Record<string, string>,
   },
@@ -364,6 +394,7 @@ export const ca = {
       breakfast: "Esmorzar",
       dessert: "Postres",
       water: "Aigua",
+      drink: "Beguda",
       other: "Altres",
     },
   },
@@ -399,6 +430,8 @@ export const ca = {
     adjustTitle: (name: string) => `Ajustar ${name}`,
     realQuantity: "Quantitat real al compartiment:",
     saveAdjust: "Desar ajust",
+    bulkAdjust: "Ajustar estoc",
+    bulkSave: "Desar",
     editLocationTitle: "Editar lloc",
     confirmDelete: (name: string) =>
       `Eliminar "${name}"? Desapareixerà dels objectes que el tenien com a ubicació habitual.`,

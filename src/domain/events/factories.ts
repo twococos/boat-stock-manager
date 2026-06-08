@@ -33,6 +33,10 @@ import type {
   FaultUpdateEvent,
   FaultResolveEvent,
   FaultBarrierEvent,
+  ShoppingAddEvent,
+  ShoppingRemoveEvent,
+  ShoppingBoughtEvent,
+  ShoppingBarrierEvent,
 } from '@/types/events';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
@@ -246,4 +250,35 @@ export function makeFaultBarrierEvent(
   cut: OrderKey,
 ): FaultBarrierEvent {
   return { ...base(ctx), type: 'fault_barrier', cut };
+}
+
+// ── llista de la compra ────────────────────────────────────────────────────────
+export function makeShoppingAddEvent(
+  ctx: EventContext,
+  objectId: ID,
+  delta: number,
+): ShoppingAddEvent {
+  return { ...base(ctx), type: 'shopping_add', objectId, delta };
+}
+
+export function makeShoppingRemoveEvent(
+  ctx: EventContext,
+  objectId: ID,
+): ShoppingRemoveEvent {
+  return { ...base(ctx), type: 'shopping_remove', objectId };
+}
+
+export function makeShoppingBoughtEvent(
+  ctx: EventContext,
+  objectId: ID,
+  qty: number,
+): ShoppingBoughtEvent {
+  return { ...base(ctx), type: 'shopping_bought', objectId, qty };
+}
+
+export function makeShoppingBarrierEvent(
+  ctx: EventContext,
+  cut: OrderKey,
+): ShoppingBarrierEvent {
+  return { ...base(ctx), type: 'shopping_barrier', cut };
 }

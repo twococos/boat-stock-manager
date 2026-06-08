@@ -9,7 +9,7 @@ import { useObjects } from '@/hooks/useData';
 import { COOK_CATEGORIES, filterByCategories } from '@/features/cook/foodFilters';
 import { t } from '@/text';
 
-type Mode = 'menu' | 'recipe' | 'water' | 'snacks' | 'dessert' | 'breakfast' | 'all';
+type Mode = 'menu' | 'recipe' | 'drink' | 'snacks' | 'dessert' | 'breakfast' | 'all';
 
 /** Menú CUINAR amb les opcions principals. PLA.md secció 12.2. */
 export function CookMenu() {
@@ -26,7 +26,7 @@ export function CookMenu() {
         <h1 className="text-xl font-bold">{t.cook.whatToCook}</h1>
         <div className="grid grid-cols-2 gap-3">
           <TileButton icon={cookModeIcon('recipe')} label={t.cook.recipe} onClick={() => setMode('recipe')} className="bg-boat-700 text-white" />
-          <TileButton icon={cookModeIcon('water')} label={t.cook.water} onClick={() => setMode('water')} className="bg-white text-boat-900" />
+          <TileButton icon={cookModeIcon('drink')} label={t.cook.drink} onClick={() => setMode('drink')} className="bg-white text-boat-900" />
           <TileButton icon={cookModeIcon('snacks')} label={t.cook.snacks} onClick={() => setMode('snacks')} className="bg-white text-boat-900" />
           <TileButton icon={cookModeIcon('dessert')} label={t.cook.dessert} onClick={() => setMode('dessert')} className="bg-white text-boat-900" />
           <TileButton icon={cookModeIcon('breakfast')} label={t.cook.breakfast} onClick={() => setMode('breakfast')} className="bg-white text-boat-900" />

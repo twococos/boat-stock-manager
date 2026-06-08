@@ -23,6 +23,7 @@ export type FoodCategory =
   | 'breakfast'
   | 'dessert'
   | 'water'
+  | 'drink'
   | 'other';
 
 /**

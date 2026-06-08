@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ResourceConfig, ResourceState } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
-import { Card, ProgressBar } from '@/components/ui/common';
+import { Card, ProgressBar, ToggleButton } from '@/components/ui/common';
 import { commitFuelMeasure, commitResourceConfig } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { nowISO } from '@/lib/time';
@@ -21,6 +21,8 @@ export function FuelPanel({
   const [addLiters, setAddLiters] = useState(0);
   const [editCfg, setEditCfg] = useState(false);
   const [cap, setCap] = useState(capacity);
+  // Quina targeta d'acció està desplegada (null = cap, pàgina neta).
+  const [open, setOpen] = useState<null | 'measure' | 'fill'>(null);
 
   const liters = state?.fuelLiters;
 
@@ -40,7 +42,22 @@ export function FuelPanel({
         <ProgressBar percent={state?.percent ?? null} />
       </Card>
 
+      {/* Toggles d'acció */}
+      <div className="flex gap-2">
+        <ToggleButton
+          label={t.resources.toggleMeasure}
+          active={open === 'measure'}
+          onClick={() => setOpen(open === 'measure' ? null : 'measure')}
+        />
+        <ToggleButton
+          label={t.resources.fill}
+          active={open === 'fill'}
+          onClick={() => setOpen(open === 'fill' ? null : 'fill')}
+        />
+      </div>
+
       {/* Afegir mesura (%) */}
+      {open === 'measure' && (
       <Card className="flex flex-col gap-3">
         <label className="text-sm font-semibold text-boat-700">{t.resources.fuelLevel}</label>
         <div className="flex items-center gap-3">
@@ -58,8 +75,10 @@ export function FuelPanel({
           {t.resources.addMeasure}
         </Button>
       </Card>
+      )}
 
       {/* Omplir */}
+      {open === 'fill' && (
       <Card className="flex flex-col gap-3">
         <label className="text-sm font-semibold text-boat-700">{t.resources.fill}</label>
         <Button variant="secondary" onClick={() => void commitFuelMeasure(userName ?? '', { refillToFull: true })}>
@@ -88,6 +107,7 @@ export function FuelPanel({
           </Button>
         </div>
       </Card>
+      )}
 
       {/* Configuració */}
       {editCfg ? (

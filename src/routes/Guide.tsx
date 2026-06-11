@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/ui/common';
+import { Photo } from '@/components/ui/Photo';
 import { Book } from '@/components/ui/icons';
 import { t } from '@/text';
 import { guideSections, GUIDE_ICONS, type GuideBlock } from '@/content/guide';
@@ -117,10 +118,9 @@ function GuideBlockView({ block }: { block: GuideBlock }) {
     case 'image':
       return (
         <figure className="flex flex-col gap-1">
-          <img
+          <Photo
             src={import.meta.env.BASE_URL + block.src}
             alt={block.caption ?? ''}
-            loading="lazy"
             className="w-full rounded-2xl object-cover"
           />
           {block.caption && (

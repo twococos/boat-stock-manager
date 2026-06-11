@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConfirmAction } from '@/components/ui/ConfirmAction';
 import { Plus, CheckCircle } from '@/components/ui/icons';
 import { AddUpdateSheet } from './AddUpdateSheet';
+import { FaultUpdatePhoto } from './FaultUpdatePhoto';
 import type { DerivedFault } from '@/domain/faults/deriveFaults';
 import { SEVERITY_BAND } from '@/domain/faults/deriveFaults';
 import { relativeFromNow } from '@/lib/time';
@@ -21,7 +22,7 @@ export function FaultCard({
   fault: DerivedFault;
   expanded: boolean;
   onToggle: () => void;
-  onAddUpdate: (text: string) => void;
+  onAddUpdate: (payload: { text?: string; photoPath?: string }) => void;
   onResolve: () => void;
 }) {
   const [updateOpen, setUpdateOpen] = useState(false);
@@ -62,7 +63,11 @@ export function FaultCard({
                       key={u.id}
                       className="rounded-lg border border-boat-100 bg-boat-50 p-2 text-sm"
                     >
-                      <p className="whitespace-pre-wrap">{u.text}</p>
+                      {u.photoPath ? (
+                        <FaultUpdatePhoto photoPath={u.photoPath} />
+                      ) : (
+                        <p className="whitespace-pre-wrap">{u.text}</p>
+                      )}
                       <div className="mt-1 flex justify-between text-xs text-boat-400">
                         <span>{t.faults.updateBy(u.by)}</span>
                         <span>{relativeFromNow(u.at)}</span>
@@ -96,9 +101,10 @@ export function FaultCard({
 
       <AddUpdateSheet
         open={updateOpen}
+        faultId={fault.id}
         onClose={() => setUpdateOpen(false)}
-        onSubmit={(text) => {
-          onAddUpdate(text);
+        onSubmit={(payload) => {
+          onAddUpdate(payload);
           setUpdateOpen(false);
         }}
       />

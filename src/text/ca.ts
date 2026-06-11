@@ -28,6 +28,11 @@ export const ca = {
     daysShort: (n: number) => `${Math.ceil(n)} d`,
   },
 
+  /** Visor d'imatge a pantalla completa. */
+  viewer: {
+    label: "Imatge a pantalla completa",
+  },
+
   /** Navegació inferior i capçalera. */
   nav: {
     home: "Inici",
@@ -218,6 +223,11 @@ export const ca = {
     noUpdates: "Cap actualització encara.",
     addUpdate: "Afegir actualització",
     updatePlaceholder: "Què ha passat o què s'ha fet…",
+    addPhoto: "Afegir foto",
+    discardPhoto: "Sortir",
+    processing: "Processant…",
+    updatePhotoAlt: "Foto de l'actualització",
+    photoUpdate: "Foto",
     resolve: "Solucionar",
     resolveConfirm: "Marcar aquesta avaria com a solucionada? Sortirà de la llista (quedarà a l'historial).",
     updateBy: (who: string) => `per ${who}`,
@@ -479,6 +489,10 @@ export const ca = {
     ingredientsPerPerson: "Ingredients (per persona)",
     removeIngredientAria: "Treure ingredient",
     addIngredient: "+ Afegir ingredient",
+    searchIngredientPlaceholder: "Cercar ingredient…",
+    pickIngredientTitle: "Afegir ingredient",
+    newIngredient: "+ Nou ingredient",
+    newObjectTitle: "Nou objecte",
     prepTime: "Temps (min, opcional)",
     needsCooking: "Cal foc",
     steps: "Passos (un per línia, opcional)",

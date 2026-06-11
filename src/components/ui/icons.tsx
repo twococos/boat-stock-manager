@@ -45,6 +45,7 @@ import {
   MessageSquarePlus,
   CheckCircle,
   Plus,
+  ImagePlus,
   type LucideIcon,
 } from 'lucide-react';
 import type { StockDeltaReason } from '@/types/events';
@@ -90,6 +91,7 @@ export {
   MessageSquarePlus,
   CheckCircle,
   Plus,
+  ImagePlus,
 };
 export type { LucideIcon };
 

@@ -11,6 +11,7 @@ import { LocationForm } from '@/features/locations/LocationForm';
 import { ObjectDetail } from '@/features/objects/ObjectDetail';
 import { useObjects, useLocations, useInventoryMap } from '@/hooks/useData';
 import { useLocationPhoto } from '@/hooks/useLocationPhoto';
+import { Photo } from '@/components/ui/Photo';
 import { formatQuantity } from '@/lib/format';
 import {
   commitStockDelta,
@@ -143,7 +144,7 @@ export function LocationView() {
 
       {photoUrl && (
         <div className="overflow-hidden rounded-3xl shadow-sm">
-          <img
+          <Photo
             src={photoUrl}
             alt={t.locationView.photoAlt(location.name)}
             className="max-h-64 w-full object-cover"

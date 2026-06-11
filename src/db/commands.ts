@@ -246,14 +246,21 @@ export async function commitFaultReport(
   return event.faultId;
 }
 
-/** Afegeix una actualització follow-up a una avaria. */
+/**
+ * Afegeix una actualització follow-up a una avaria. És O de text O de foto (mai les dues):
+ * el payload ha de portar exactament un de `text`/`photoPath`; si no, no fa res.
+ */
 export async function commitFaultUpdate(
   userName: string,
   faultId: ID,
-  text: string,
+  payload: { text?: string; photoPath?: string },
 ): Promise<void> {
+  const text = payload.text?.trim() || undefined;
+  const photoPath = payload.photoPath || undefined;
+  // Exactament un dels dos.
+  if (!text === !photoPath) return;
   const ctx = await buildContext(userName);
-  await commit(makeFaultUpdateEvent(ctx, faultId, text));
+  await commit(makeFaultUpdateEvent(ctx, faultId, { text, photoPath }));
 }
 
 /** Soluciona una avaria (definitiu: surt de la llista d'actives). */

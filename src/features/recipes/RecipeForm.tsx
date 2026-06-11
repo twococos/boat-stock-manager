@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import type { Recipe, RecipeIngredient } from '@/types/entities';
+import { useMemo, useState } from 'react';
+import type { ItemObject, Recipe, RecipeIngredient } from '@/types/entities';
 import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
+import { ObjectIcon } from '@/components/ui/ObjectIcon';
+import { ObjectForm } from '@/features/objects/ObjectForm';
 import { X, Flame } from '@/components/ui/icons';
-import { useObjects } from '@/hooks/useData';
+import { useObjects, useObjectsMap } from '@/hooks/useData';
 import { newId } from '@/lib/id';
 import { nowISO } from '@/lib/time';
 import { t } from '@/text';
@@ -11,13 +14,17 @@ import { t } from '@/text';
 export function RecipeForm({
   initial,
   onSave,
+  onCreateObject,
   onCancel,
 }: {
   initial?: Recipe;
   onSave: (r: Recipe) => void;
+  /** Desa un objecte nou creat des de dins la recepta (commitObjectUpsert al pare). */
+  onCreateObject: (obj: ItemObject) => Promise<void>;
   onCancel: () => void;
 }) {
   const objects = useObjects() ?? [];
+  const objectsMap = useObjectsMap();
   const [title, setTitle] = useState(initial?.title ?? '');
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>(
     initial?.ingredients ?? [],
@@ -26,12 +33,45 @@ export function RecipeForm({
   const [needsCooking, setNeedsCooking] = useState(initial?.needsCooking ?? false);
   const [stepsText, setStepsText] = useState((initial?.steps ?? []).join('\n'));
 
+  // Sub-Sheet de cerca/selecció d'ingredient i sub-Sheet de nou objecte.
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState('');
+  const [creatingObject, setCreatingObject] = useState(false);
+
   const field = 'rounded-xl border border-boat-100 px-4 py-3 w-full';
 
-  function addIngredient() {
-    const first = objects[0];
-    if (!first) return;
-    setIngredients((p) => [...p, { objectId: first.id, quantityPerPerson: 1 }]);
+  // Objectes que encara NO són a la recepta (evita duplicats), filtrats per la cerca.
+  const usedIds = useMemo(() => new Set(ingredients.map((i) => i.objectId)), [ingredients]);
+  const candidates = useMemo(
+    () =>
+      objects.filter(
+        (o) =>
+          !usedIds.has(o.id) && o.name.toLowerCase().includes(query.toLowerCase()),
+      ),
+    [objects, usedIds, query],
+  );
+
+  function openPicker() {
+    setQuery('');
+    setPicking(true);
+  }
+
+  function addIngredient(objectId: string) {
+    if (usedIds.has(objectId)) return;
+    setIngredients((p) => [...p, { objectId, quantityPerPerson: 1 }]);
+    setPicking(false);
+  }
+
+  async function createObject(obj: ItemObject) {
+    await onCreateObject(obj);
+    // El nou objecte s'afegeix automàticament com a ingredient de la recepta.
+    setIngredients((p) =>
+      p.some((i) => i.objectId === obj.id)
+        ? p
+        : [...p, { objectId: obj.id, quantityPerPerson: 1 }],
+    );
+    setCreatingObject(false);
+    setPicking(false);
   }
 
   function submit() {
@@ -52,17 +92,6 @@ export function RecipeForm({
     onSave(recipe);
   }
 
-  if (objects.length === 0) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-sm text-boat-600">
-          {t.recipeForm.needObjectsFirst}
-        </p>
-        <Button variant="secondary" onClick={onCancel}>{t.recipeForm.close}</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <input className={field} placeholder={t.recipeForm.titlePlaceholder} value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -70,19 +99,10 @@ export function RecipeForm({
       <label className="text-sm font-medium text-boat-700">{t.recipeForm.ingredientsPerPerson}</label>
       {ingredients.map((ing, idx) => (
         <div key={idx} className="flex items-center gap-2">
-          <select
-            className="flex-1 rounded-xl border border-boat-100 px-2 py-2"
-            value={ing.objectId}
-            onChange={(e) =>
-              setIngredients((p) =>
-                p.map((x, i) => (i === idx ? { ...x, objectId: e.target.value } : x)),
-              )
-            }
-          >
-            {objects.map((o) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </select>
+          <span className="flex flex-1 items-center gap-2 rounded-xl border border-boat-100 px-3 py-2">
+            <ObjectIcon icon={objectsMap.get(ing.objectId)?.icon} size={20} />
+            <span className="truncate">{objectsMap.get(ing.objectId)?.name ?? ''}</span>
+          </span>
           <input
             type="number"
             step="0.01"
@@ -106,7 +126,7 @@ export function RecipeForm({
           </button>
         </div>
       ))}
-      <button type="button" onClick={addIngredient} className="self-start text-sm text-boat-600">
+      <button type="button" onClick={openPicker} className="self-start text-sm text-boat-600">
         {t.recipeForm.addIngredient}
       </button>
 
@@ -137,6 +157,54 @@ export function RecipeForm({
         <Button variant="secondary" onClick={onCancel}>{t.common.cancel}</Button>
         <Button onClick={submit}>{t.common.save}</Button>
       </div>
+
+      {/* Sub-Sheet: cerca i selecció d'ingredient. Si no hi ha coincidències, "Nou ingredient". */}
+      <Sheet open={picking} onClose={() => setPicking(false)} title={t.recipeForm.pickIngredientTitle}>
+        <div className="flex flex-col gap-3">
+          <input
+            type="search"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.recipeForm.searchIngredientPlaceholder}
+            className={field}
+          />
+          {candidates.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => setCreatingObject(true)}
+              className="self-start text-sm font-medium text-boat-700"
+            >
+              {t.recipeForm.newIngredient}
+            </button>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {candidates.map((o) => (
+                <li key={o.id}>
+                  <button
+                    type="button"
+                    onClick={() => addIngredient(o.id)}
+                    className="flex w-full items-center gap-2 rounded-2xl bg-white p-3 shadow-sm active:scale-[0.98]"
+                  >
+                    <ObjectIcon icon={o.icon} size={24} />
+                    <span className="text-left font-semibold">{o.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </Sheet>
+
+      {/* Sub-Sheet: nou objecte. Es renderitza dins el RecipeForm perquè no es perdi
+          el progrés de la recepta. En desar, s'afegeix com a ingredient. */}
+      <Sheet open={creatingObject} onClose={() => setCreatingObject(false)} title={t.recipeForm.newObjectTitle}>
+        <ObjectForm
+          initialName={query}
+          onSave={createObject}
+          onCancel={() => setCreatingObject(false)}
+        />
+      </Sheet>
     </div>
   );
 }

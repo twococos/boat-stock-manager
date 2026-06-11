@@ -14,10 +14,11 @@ import { sortEvents, keyOf, compareKey } from '@/domain/inventory/ordering';
  * clau d'ordre < cut (anàleg al reset d'estoc). Veure CONTEXT.md (barrera de tall).
  */
 
-/** Una actualització follow-up d'una avaria. */
+/** Una actualització follow-up d'una avaria. És O de text O de foto (mai les dues). */
 export interface FaultUpdate {
   id: ID;
-  text: string;
+  text?: string;
+  photoPath?: string;
   at: ISOTimestamp;
   by: UserName;
 }
@@ -116,6 +117,7 @@ export function deriveFaults(events: readonly AppEvent[]): Map<ID, DerivedFault>
         f.updates.push({
           id: ev.id,
           text: ev.text,
+          photoPath: ev.photoPath,
           at: ev.occurredAt,
           by: ev.userName,
         });

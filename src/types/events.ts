@@ -212,11 +212,16 @@ export interface FaultReportEvent extends EventBase {
   severity: FaultSeverity;
 }
 
-/** Actualització follow-up lligada a una avaria (registra data/hora i autor). */
+/**
+ * Actualització follow-up lligada a una avaria (registra data/hora i autor). Una
+ * actualització és O de text O de foto, mai les dues: exactament un de `text`/`photoPath`
+ * ve informat (l'invariant el garanteix el command `commitFaultUpdate`, no el tipus).
+ */
 export interface FaultUpdateEvent extends EventBase {
   type: 'fault_update';
   faultId: ID;
-  text: string;
+  text?: string;
+  photoPath?: string; // ruta a Storage (vegeu photoQueue); exclusiu amb `text`
 }
 
 /** Solucionar una avaria (definitiu: surt de la llista d'actives). */

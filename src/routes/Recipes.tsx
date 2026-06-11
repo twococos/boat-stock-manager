@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Recipe } from '@/types/entities';
+import type { ItemObject, Recipe } from '@/types/entities';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/common';
@@ -8,7 +8,7 @@ import { ConfirmDelete } from '@/components/ui/ConfirmDelete';
 import { RecipeForm } from '@/features/recipes/RecipeForm';
 import { RecipeDetail } from '@/features/recipes/RecipeDetail';
 import { useRecipes } from '@/hooks/useData';
-import { commitRecipeUpsert, commitRecipeDelete } from '@/db/commands';
+import { commitRecipeUpsert, commitRecipeDelete, commitObjectUpsert } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { useEditLocked } from '@/hooks/useEditLocked';
 import { t } from '@/text';
@@ -33,6 +33,11 @@ export function Recipes() {
     if (!userName) return;
     await commitRecipeDelete(userName, id);
     setEditing(null);
+  }
+
+  async function createObject(obj: ItemObject) {
+    if (!userName) return;
+    await commitObjectUpsert(userName, obj);
   }
 
   return (
@@ -64,12 +69,12 @@ export function Recipes() {
       {!editLocked && <Button onClick={() => setCreating(true)}>{t.recipes.newRecipe}</Button>}
 
       <Sheet open={creating} onClose={() => setCreating(false)} title={t.recipes.newRecipeTitle}>
-        <RecipeForm onSave={save} onCancel={() => setCreating(false)} />
+        <RecipeForm onSave={save} onCreateObject={createObject} onCancel={() => setCreating(false)} />
       </Sheet>
       <Sheet open={!!editing} onClose={() => setEditing(null)} title={t.recipes.editRecipeTitle}>
         {editing && (
           <div className="flex flex-col gap-4">
-            <RecipeForm initial={editing} onSave={save} onCancel={() => setEditing(null)} />
+            <RecipeForm initial={editing} onSave={save} onCreateObject={createObject} onCancel={() => setEditing(null)} />
             <ConfirmDelete
               message={t.recipes.confirmDelete(editing.title)}
               onConfirm={() => remove(editing.id)}

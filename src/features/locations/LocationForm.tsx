@@ -81,10 +81,10 @@ export function LocationForm({
         </div>
         <label className="btn-touch flex-1 cursor-pointer bg-boat-100 text-boat-900">
           {busy ? t.locationForm.processing : previewUrl ? t.locationForm.changeImage : t.locationForm.addImage}
+          {/* Sense `capture`: el sistema deixa triar entre càmera i galeria. */}
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             className="hidden"
             onChange={onPickPhoto}
           />

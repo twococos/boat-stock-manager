@@ -8,6 +8,7 @@ import { Archive, Pencil } from '@/components/ui/icons';
 import { LocationForm } from '@/features/locations/LocationForm';
 import { useLocations, useHeaderLocation } from '@/hooks/useData';
 import { useLocationPhoto } from '@/hooks/useLocationPhoto';
+import { Photo } from '@/components/ui/Photo';
 import { commitLocationUpsert } from '@/db/commands';
 import { useAuth } from '@/auth/AuthProvider';
 import { useEditLocked } from '@/hooks/useEditLocked';
@@ -68,14 +69,14 @@ export function LocationsList() {
           <label className="flex cursor-pointer items-center gap-1 text-sm text-boat-600 active:scale-95">
             <Pencil size={16} />
             {busy ? t.locations.processing : headerUrl ? t.locations.changePhoto : t.locations.addPhoto}
-            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPickHeader} />
+            <input type="file" accept="image/*" className="hidden" onChange={onPickHeader} />
           </label>
         )}
       </div>
 
       {headerUrl && (
         <div className="overflow-hidden rounded-3xl shadow-sm">
-          <img src={headerUrl} alt={t.locations.headerAlt} className="max-h-48 w-full object-cover" />
+          <Photo src={headerUrl} alt={t.locations.headerAlt} className="max-h-48 w-full object-cover" />
         </div>
       )}
 

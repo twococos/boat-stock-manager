@@ -2,6 +2,7 @@ import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginScreen } from './auth/LoginScreen';
 import { SyncProvider } from './sync/SyncProvider';
+import { ImageViewerProvider } from './components/ui/ImageViewer';
 import { Layout } from './routes/Layout';
 import { Home } from './routes/Home';
 import { CookMenu } from './routes/CookMenu';
@@ -70,7 +71,9 @@ export default function App() {
   return (
     <AuthProvider>
       <SyncProvider>
-        <Gate />
+        <ImageViewerProvider>
+          <Gate />
+        </ImageViewerProvider>
       </SyncProvider>
     </AuthProvider>
   );

@@ -46,8 +46,8 @@ export function Faults() {
                 fault={f}
                 expanded={expandedId === f.id}
                 onToggle={() => setExpandedId(expandedId === f.id ? null : f.id)}
-                onAddUpdate={(text) =>
-                  userName ? commitFaultUpdate(userName, f.id, text) : undefined
+                onAddUpdate={(payload) =>
+                  userName ? commitFaultUpdate(userName, f.id, payload) : undefined
                 }
                 onResolve={() => {
                   if (userName) commitFaultResolve(userName, f.id);

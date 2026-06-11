@@ -3,7 +3,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useAllEvents } from '@/hooks/useData';
 import { EmptyState, Card } from '@/components/ui/common';
 import { ConfirmAction } from '@/components/ui/ConfirmAction';
-import { ScrollText, faultEventIcon, History as HistoryIcon, Trash2 } from '@/components/ui/icons';
+import { ScrollText, faultEventIcon, History as HistoryIcon, Trash2, ImagePlus } from '@/components/ui/icons';
 import { sortEvents, keyOf, compareKey } from '@/domain/inventory/ordering';
 import {
   deriveFaults,
@@ -161,9 +161,15 @@ function FaultEventCard({
             <span className="text-boat-400">{relativeFromNow(event.occurredAt)}</span>
           </div>
           <div className="mt-0.5 truncate text-sm">{title}</div>
-          {event.type === 'fault_update' && (
-            <p className="mt-1 whitespace-pre-wrap text-sm text-boat-600">{event.text}</p>
-          )}
+          {event.type === 'fault_update' &&
+            (event.photoPath ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-boat-500">
+                <ImagePlus size={15} />
+                {t.faults.photoUpdate}
+              </p>
+            ) : (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-boat-600">{event.text}</p>
+            ))}
           <div className="mt-1 text-xs text-boat-400">{event.userName}</div>
         </div>
       </div>

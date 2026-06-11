@@ -38,15 +38,18 @@ type ExpiryMode = 'never' | 'days_from_purchase' | 'define_on_add';
 /** Formulari de creació/edició d'un objecte del catàleg. PLA.md secció 12.5. */
 export function ObjectForm({
   initial,
+  initialName,
   onSave,
   onCancel,
 }: {
   initial?: ItemObject;
+  /** Nom prefillat en creació (p.ex. el text cercat des d'una recepta). */
+  initialName?: string;
   onSave: (obj: ItemObject) => void;
   onCancel: () => void;
 }) {
   const locations = useLocations() ?? [];
-  const [name, setName] = useState(initial?.name ?? '');
+  const [name, setName] = useState(initial?.name ?? initialName ?? '');
   const [icon, setIcon] = useState(initial?.icon ?? '');
   const [stockType, setStockType] = useState<StockType>(initial?.stockType ?? 'food');
   const [quantityType, setQuantityType] = useState<QuantityType>(

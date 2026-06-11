@@ -233,9 +233,9 @@ export function makeFaultReportEvent(
 export function makeFaultUpdateEvent(
   ctx: EventContext,
   faultId: ID,
-  text: string,
+  payload: { text?: string; photoPath?: string },
 ): FaultUpdateEvent {
-  return { ...base(ctx), type: 'fault_update', faultId, text };
+  return { ...base(ctx), type: 'fault_update', faultId, ...payload };
 }
 
 export function makeFaultResolveEvent(

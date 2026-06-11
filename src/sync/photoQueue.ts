@@ -15,7 +15,7 @@ const BUCKET = 'boat-photos';
 /** Encua una foto per pujar més tard. Retorna la ruta destí prevista a Storage. */
 export async function enqueuePhoto(
   blob: Blob,
-  targetType: 'object' | 'location' | 'app',
+  targetType: 'object' | 'location' | 'app' | 'fault',
   targetId: string,
 ): Promise<string> {
   const id = newId();
